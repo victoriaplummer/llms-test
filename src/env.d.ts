@@ -10,10 +10,8 @@ declare namespace App {
 
 interface ImportMetaEnv {
   readonly PUBLIC_WEBFLOW_SITE_ID: string;
-  readonly PUBLIC_WEBFLOW_COLLECTION_ID: string;
-  readonly BASE_URL: string;
-  readonly WEBFLOW_API_TOKEN: string;
   readonly WEBFLOW_SITE_API_TOKEN: string;
+  readonly BASE_URL: string;
 }
 
 interface ImportMeta {
