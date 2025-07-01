@@ -8,7 +8,7 @@ import tailwind from "@astrojs/tailwind";
 
 // https://astro.build/config
 export default defineConfig({
-  base: "/llms",
+  base: "/llmstxt",
   site: "http://localhost:4321",
   trailingSlash: "ignore",
   prefetch: true,
