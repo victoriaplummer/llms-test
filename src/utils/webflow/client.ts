@@ -2,7 +2,7 @@ import { WebflowClient } from "webflow-api";
 
 // Initialize single webflow client instance
 const webflowClient = new WebflowClient({
-  accessToken: import.meta.env.PUBLIC_WEBFLOW_SITE_API_TOKEN,
+  accessToken: import.meta.env.WEBFLOW_SITE_API_TOKEN,
 });
 
 // Track rate limit state
