@@ -249,6 +249,7 @@ export const processWebflowPage = async (
   ].join("\n");
 
   // Store with both URLs
+  const basePath = import.meta.env.BASE_URL;
   const baseKey = `docs/${slug}`;
   await locals.webflowContent.put(baseKey, markdownContent);
   await locals.webflowContent.put(`${baseKey}.md`, markdownContent);

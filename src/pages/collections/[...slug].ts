@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
 
 export const GET: APIRoute = async ({ params, locals }) => {
+  const runtime = locals.runtime;
+
   const { slug = "" } = params;
 
   // Try both with and without .md extension

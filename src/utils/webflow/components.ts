@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import type { WebflowNode, WebflowPageContentResponse } from "../webflow-types";
 import { webflow, withRateLimit, delay } from "./client";
 import type { MinimalKV } from "../types";
@@ -116,8 +118,19 @@ export const fetchComponents = async (
   siteId: string,
   locals?: LocalsWithKV
 ) => {
+  console.log("[Components] Debug Info:", {
+    siteId,
+    hasLocals: !!locals,
+    hasWebflowContent: !!locals?.webflowContent,
+    webflowContentType: locals?.webflowContent
+      ? typeof locals.webflowContent
+      : "undefined",
+    hasMemoryCache: !!componentsCache[siteId],
+  });
+
   // Check memory cache first
   if (componentsCache[siteId]) {
+    console.log("[Components] Returning from memory cache");
     return componentsCache[siteId];
   }
 
@@ -125,20 +138,31 @@ export const fetchComponents = async (
   if (locals?.webflowContent) {
     const cacheKey = `components:${siteId}`;
     try {
+      console.log("[Components] Checking persistent cache:", { cacheKey });
       const cached = await locals.webflowContent.get(cacheKey);
+      console.log("[Components] Persistent cache result:", {
+        hasCached: !!cached,
+        cachedType: typeof cached,
+      });
+
       if (cached) {
         const parsedCache = JSON.parse(cached);
         if (isValidCache(parsedCache)) {
+          console.log("[Components] Valid cache found, storing in memory");
           componentsCache[siteId] = parsedCache.data;
           return parsedCache.data;
         }
       }
     } catch (error) {
-      console.warn("Error reading from persistent cache:", error);
+      console.error("[Components] Error reading from persistent cache:", {
+        error: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+      });
     }
   }
 
   // Initialize cache if not found
+  console.log("[Components] No cache found, initializing components cache");
   return initializeComponentsCache(siteId, locals);
 };
 

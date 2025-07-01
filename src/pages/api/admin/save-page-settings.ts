@@ -1,3 +1,7 @@
+export const config = {
+  runtime: "edge",
+};
+
 import type { APIRoute } from "astro";
 
 interface PageConfig {
@@ -7,17 +11,21 @@ interface PageConfig {
 }
 
 export const POST: APIRoute = async ({ request, locals }) => {
+  const runtime = locals.runtime;
   try {
-    const settings = (await request.json()) as Record<string, PageConfig>;
+    const pageSettings = (await request.json()) as Record<string, PageConfig>;
+
+    // Load existing settings
+    const existingSettings = await locals.exposureSettings.get("settings");
+    const settings = existingSettings
+      ? JSON.parse(existingSettings)
+      : { collections: {}, pages: {} };
+
+    // Update page settings
+    settings.pages = pageSettings;
 
     // Store settings in KV
-    await locals.webflowContent.put(
-      "page-settings",
-      JSON.stringify({
-        settings,
-        timestamp: Date.now(),
-      })
-    );
+    await locals.exposureSettings.put("settings", JSON.stringify(settings));
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

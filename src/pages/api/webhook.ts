@@ -1,3 +1,7 @@
+export const config = {
+  runtime: "edge",
+};
+
 import type { APIRoute } from "astro";
 import { GET as getPages } from "./pages";
 import { GET as getCollections } from "./collections";
@@ -12,6 +16,8 @@ interface CollectionsResponse {
 }
 
 export const POST: APIRoute = async ({ request, locals }) => {
+  const runtime = locals.runtime;
+
   try {
     console.log("Received webhook from Webflow");
 
@@ -45,7 +51,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         pagesProcessed: pagesResult.pagesProcessed || 0,
         collectionsProcessed:
           collectionsResult.message || "Collections updated",
-        llmstxt: `${import.meta.env.PUBLIC_BASE_URL}/llms/llms.txt`,
+        llmstxt: `${import.meta.env._BASE_URL}/llms.txt`,
       }),
       {
         status: 200,

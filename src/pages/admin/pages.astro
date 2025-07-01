@@ -14,8 +14,8 @@ if (!siteId) {
 const pages = await fetchAllPages(siteId);
 
 // Get existing settings
-const pageSettings = await Astro.locals.webflowContent.get('page-settings');
-const initialSettings = pageSettings ? JSON.parse(pageSettings).settings : null;
+const settings = await Astro.locals.exposureSettings.get('settings');
+const initialSettings = settings ? JSON.parse(settings).pages : null;
 ---
 
 <Layout title="Manage Pages">

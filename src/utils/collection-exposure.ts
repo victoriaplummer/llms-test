@@ -31,17 +31,41 @@ let exposureSettings: {
  * Updates the exposure settings
  */
 export async function loadExposureSettings(kv: any) {
-  const rawSettings = await kv.get("settings");
-  exposureSettings = {
-    collections:
-      typeof rawSettings === "string"
-        ? (JSON.parse(rawSettings) as { collections: Record<string, any> })
-            .collections || {}
-        : rawSettings && typeof rawSettings === "object"
-        ? (rawSettings as { collections?: Record<string, any> }).collections ||
-          {}
-        : {},
-  };
+  console.log("[Exposure] Loading settings:", {
+    hasKV: !!kv,
+    kvType: typeof kv,
+    kvMethods: kv ? Object.keys(kv) : [],
+  });
+
+  try {
+    const rawSettings = await kv.get("settings");
+    console.log("[Exposure] Raw settings result:", {
+      hasSettings: !!rawSettings,
+      settingsType: typeof rawSettings,
+    });
+
+    exposureSettings = {
+      collections:
+        typeof rawSettings === "string"
+          ? (JSON.parse(rawSettings) as { collections: Record<string, any> })
+              .collections || {}
+          : rawSettings && typeof rawSettings === "object"
+          ? (rawSettings as { collections?: Record<string, any> })
+              .collections || {}
+          : {},
+    };
+
+    console.log("[Exposure] Parsed settings:", {
+      hasCollections: !!exposureSettings.collections,
+      collectionCount: Object.keys(exposureSettings.collections).length,
+    });
+  } catch (error) {
+    console.error("[Exposure] Error loading settings:", {
+      error: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+    });
+    exposureSettings = { collections: {} };
+  }
 }
 
 /**

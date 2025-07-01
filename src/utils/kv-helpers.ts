@@ -1,13 +1,48 @@
 import type { APIContext } from "astro";
 import type { MinimalKV } from "./types";
 
+export const config = {
+  runtime: "edge",
+};
+
+const llmsKey = "llms.txt";
+
 export const getKVContent = async (
   context: APIContext,
   key: string,
-  defaultValue: string = ""
+  defaultValue: any = null
 ) => {
-  const webflowContent = (context.locals as App.Locals).webflowContent;
-  return (await webflowContent.get(key)) || defaultValue;
+  try {
+    console.log("[KV Debug] Attempting to get content:", {
+      key,
+      hasContext: !!context,
+      hasLocals: !!context?.locals,
+      hasWebflowContent: !!context?.locals?.webflowContent,
+      webflowContentType: context?.locals?.webflowContent
+        ? typeof context.locals.webflowContent
+        : "undefined",
+      webflowContentMethods: context?.locals?.webflowContent
+        ? Object.keys(context.locals.webflowContent)
+        : [],
+    });
+
+    const content = await context.locals.webflowContent.get(key);
+
+    console.log("[KV Debug] Get result:", {
+      key,
+      hasContent: !!content,
+      contentType: typeof content,
+    });
+
+    return content ?? defaultValue;
+  } catch (error) {
+    console.error("[KV Debug] Error getting content:", {
+      key,
+      error: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+    });
+    return defaultValue;
+  }
 };
 
 /**
@@ -19,7 +54,7 @@ export async function updateLLMSSection(
   sectionContent: string[]
 ): Promise<void> {
   // Get existing content
-  const existingContent = (await kv.get("llms.txt")) || "";
+  const existingContent = (await kv.get(llmsKey)) || "";
   const lines = existingContent.split("\n");
 
   // Find section boundaries
@@ -52,7 +87,7 @@ export async function updateLLMSSection(
       "",
       ...sectionContent,
     ].join("\n");
-    await kv.put("llms.txt", newContent);
+    await kv.put(llmsKey, newContent);
     return;
   }
 
@@ -78,5 +113,5 @@ export async function updateLLMSSection(
     return acc;
   }, []);
 
-  await kv.put("llms.txt", cleanedLines.join("\n"));
+  await kv.put(llmsKey, cleanedLines.join("\n"));
 }

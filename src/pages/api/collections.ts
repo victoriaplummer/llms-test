@@ -1,3 +1,7 @@
+export const config = {
+  runtime: "edge",
+};
+
 import type { APIRoute } from "astro";
 import {
   fetchCollections,
@@ -213,6 +217,8 @@ function formatCollectionUrl(name: string): string {
 }
 
 export const GET: APIRoute = async ({ locals }) => {
+  const runtime = locals.runtime;
+
   try {
     console.log("Starting collections endpoint");
     const siteId = import.meta.env.PUBLIC_WEBFLOW_SITE_ID;
@@ -235,6 +241,23 @@ export const GET: APIRoute = async ({ locals }) => {
     console.log(
       `${exposedCollections.length} collections are configured for exposure`
     );
+
+    // If no collections are exposed, return early
+    if (exposedCollections.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "No collections are configured for exposure",
+          collections: [],
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
 
     // Prepare collections content for llms.txt
     const collectionsContent = [
@@ -289,11 +312,13 @@ export const GET: APIRoute = async ({ locals }) => {
         const items = await fetchAllCollectionItems(collection._id);
         console.log(`Found ${items.length} items`);
 
+        const basePath = import.meta.env.BASE_URL;
+
         // Add collection to llms.txt content with formatted URL
         collectionsContent.push(
           `- [${
             config.displayName || collection.displayName
-          }](collections/${collectionUrl}): ${
+          }](${basePath}/collections/${collectionUrl}.md): ${
             config.description || `Collection with ${items.length} items`
           }`
         );

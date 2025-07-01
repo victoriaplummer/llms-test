@@ -17,20 +17,25 @@ export default function PageManager({
   pages,
   initialSettings,
 }: PageManagerProps) {
-  const [settings, setSettings] = useState<Record<string, PageConfig>>(
-    initialSettings ||
-      // Default to all pages visible and not optional
-      Object.fromEntries(
-        pages.map((page) => [
-          page.id,
-          {
-            isVisible: true,
-            displayName: page.title,
-            isOptional: false,
-          },
-        ])
-      )
-  );
+  const [settings, setSettings] = useState<Record<string, PageConfig>>(() => {
+    // If we have initial settings, use those
+    if (initialSettings) {
+      return initialSettings;
+    }
+
+    // Otherwise create default settings for each page
+    return Object.fromEntries(
+      pages.map((page) => [
+        page.id,
+        {
+          isVisible: true, // Default to visible since most pages should be exposed
+          displayName: page.title,
+          description: "",
+          isOptional: false,
+        },
+      ])
+    );
+  });
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -73,12 +78,28 @@ export default function PageManager({
     }
   };
 
+  const updatePageSetting = (pageId: string, updates: Partial<PageConfig>) => {
+    setSettings((prev) => ({
+      ...prev,
+      [pageId]: {
+        ...prev[pageId],
+        ...updates,
+      },
+    }));
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-base-content">
-          Page Settings
-        </h2>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-xl font-semibold text-base-content">
+            Page Settings
+          </h2>
+          <p className="text-sm text-base-content/70 mt-1">
+            Configure which pages appear in your documentation and how they are
+            organized.
+          </p>
+        </div>
         <button
           onClick={handleSave}
           disabled={isSaving}
@@ -88,49 +109,88 @@ export default function PageManager({
         </button>
       </div>
 
-      <div className="space-y-2">
-        {pages.map((page) => (
-          <div key={page.id} className="card bg-base-100 shadow-lg">
-            <div className="card-body p-4 flex-row justify-between items-center">
-              <div className="flex items-center gap-4">
-                <input
-                  type="checkbox"
-                  checked={settings[page.id]?.isVisible ?? true}
-                  onChange={(e) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      [page.id]: {
-                        ...prev[page.id],
-                        isVisible: e.target.checked,
-                      },
-                    }))
-                  }
-                  className="checkbox checkbox-primary"
-                />
-                <span className="text-base-content">{page.title}</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <label className="label cursor-pointer gap-2">
-                  <input
-                    type="checkbox"
-                    checked={settings[page.id]?.isOptional ?? false}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        [page.id]: {
-                          ...prev[page.id],
-                          isOptional: e.target.checked,
-                        },
-                      }))
-                    }
-                    className="checkbox checkbox-secondary checkbox-sm"
-                  />
-                  <span className="label-text">Optional</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="overflow-x-auto">
+        <table className="table w-full">
+          <thead>
+            <tr>
+              <th>Page Title</th>
+              <th className="w-48">
+                <div className="flex items-center gap-2">
+                  <span>Settings</span>
+                  <div
+                    className="tooltip tooltip-right"
+                    data-tip="Control page visibility and organization"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      className="w-4 h-4 stroke-current opacity-50"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      ></path>
+                    </svg>
+                  </div>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {pages.map((page) => (
+              <tr key={page.id} className="hover">
+                <td className="font-medium">{page.title}</td>
+                <td>
+                  <div className="flex items-center gap-6">
+                    <label className="label cursor-pointer gap-2">
+                      <span className="label-text">Visible</span>
+                      <input
+                        type="checkbox"
+                        checked={settings[page.id]?.isVisible ?? true}
+                        onChange={(e) =>
+                          updatePageSetting(page.id, {
+                            isVisible: e.target.checked,
+                          })
+                        }
+                        className="checkbox checkbox-primary checkbox-sm"
+                      />
+                    </label>
+                    <label className="label cursor-pointer gap-2">
+                      <span className="label-text">Optional</span>
+                      <input
+                        type="checkbox"
+                        checked={settings[page.id]?.isOptional ?? false}
+                        onChange={(e) =>
+                          updatePageSetting(page.id, {
+                            isOptional: e.target.checked,
+                          })
+                        }
+                        className="checkbox checkbox-secondary checkbox-sm"
+                      />
+                    </label>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-6 p-4 bg-base-200 rounded-lg">
+        <h3 className="font-medium mb-2">About these settings:</h3>
+        <ul className="list-disc list-inside space-y-1 text-sm text-base-content/70">
+          <li>
+            <strong>Visible:</strong> When checked, the page will appear in your
+            documentation
+          </li>
+          <li>
+            <strong>Optional:</strong> When checked, the page will be listed
+            under "Optional Pages" in your documentation
+          </li>
+        </ul>
       </div>
     </div>
   );

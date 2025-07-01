@@ -1,3 +1,7 @@
+export const config = {
+  runtime: "edge",
+};
+
 import type { APIRoute } from "astro";
 import {
   webflow,
@@ -10,6 +14,7 @@ import type { ProcessedPage } from "../../utils/webflow-types";
 import { updateLLMSSection } from "../../utils/kv-helpers";
 
 export const GET: APIRoute = async ({ url, locals }) => {
+  const runtime = locals.runtime;
   try {
     console.log("Starting pages API request");
 
@@ -65,36 +70,52 @@ export const GET: APIRoute = async ({ url, locals }) => {
       );
     }
 
+    // Load exposure settings
+    const settings = await locals.exposureSettings.get("settings");
+    console.log("Loaded exposure settings:", settings);
+
+    const pageSettings = settings ? JSON.parse(settings).pages || {} : {};
+    console.log("Page settings:", JSON.stringify(pageSettings, null, 2));
+
+    // Filter to only exposed pages
+    const exposedPages = pages.filter((page) => {
+      const pageConfig = pageSettings[page.id];
+      const isVisible = pageConfig?.isVisible === true; // Explicitly check for true
+      console.log(`Page ${page.id} (${page.title}) visibility:`, {
+        hasConfig: !!pageConfig,
+        configValue: pageConfig?.isVisible,
+        isVisible,
+      });
+      return isVisible;
+    });
+    console.log(`${exposedPages.length} pages are configured for exposure`);
+
+    // If no pages are exposed, return early
+    if (exposedPages.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "No pages are configured for exposure",
+          pages: [],
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Process Pages with rate limiting and parallel batching
     const processedPages: ProcessedPage[] = [];
-    const pagesContent = [
-      // Only include the Pages section content
-      "- All content is automatically generated from our Webflow site",
-      "- Each page and collection has a clean markdown version available at the same URL with .md appended",
-      "- Content is updated whenever changes are published in Webflow",
+    const mainPages: string[] = [];
+    const optionalPages: string[] = [];
+    const pagesContent: string[] = [
+      "The following pages are available in the Webflow site:",
       "",
     ];
 
-    // Group pages by their purpose/type
-    const mainPages: string[] = [];
-    const optionalPages: string[] = [];
-
-    // Process pages sequentially to avoid rate limits
-    const filteredPages = pages.filter(
-      (page) => !page.slug?.startsWith("detail_")
-    );
-
-    // Get page settings
-    const pageSettings = await locals.webflowContent.get("page-settings");
-    const settings = pageSettings ? JSON.parse(pageSettings).settings : {};
-
-    for (const page of filteredPages) {
-      // Skip if page is not visible
-      if (settings[page.id] && !settings[page.id].isVisible) {
-        console.log(`Skipping hidden page ${page.id}`);
-        continue;
-      }
-
+    // Process each page sequentially
+    for (const page of exposedPages) {
       locals.progressCallback?.(`Processing page ${page.id}...`);
 
       try {
@@ -103,7 +124,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
         processedPages.push(processedPage);
 
         // Use custom display name and description if set
-        const pageConfig = settings[page.id];
+        const pageConfig = pageSettings[page.id];
         const title =
           pageConfig?.displayName ||
           processedPage.metadata?.title ||
@@ -115,9 +136,10 @@ export const GET: APIRoute = async ({ url, locals }) => {
           page.seo?.description ||
           page.openGraph?.description ||
           "";
-        const pageEntry = `- [${title}](docs/${processedPage.fileName})${
-          description ? ": " + description : ""
-        }`;
+        const basePath = import.meta.env.BASE_URL;
+        const pageEntry = `- [${title}](${basePath}/docs/${
+          processedPage.fileName
+        })${description ? ": " + description : ""}`;
 
         // Add to appropriate section based on importance
         if (pageConfig?.isOptional) {

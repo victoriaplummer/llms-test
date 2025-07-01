@@ -1,15 +1,33 @@
+export const config = {
+  runtime: "edge",
+};
+
 import type { APIRoute } from "astro";
 import { GET as getCollections } from "../collections";
 import { GET as getPages } from "../pages";
 import { webflow } from "../../../utils/webflow/client";
-import type { WebflowSite } from "../../../utils/webflow-types";
+import type { WebflowSite, ProcessedPage } from "../../../utils/webflow-types";
+import {
+  loadExposureSettings,
+  isCollectionExposed,
+} from "../../../utils/collection-exposure";
+
+const basePath = import.meta.env.BASE_URL;
+
+interface ErrorResponse {
+  error: string;
+  message?: string;
+}
 
 // Helper to send progress events
 const sendProgress = (
   controller: ReadableStreamDefaultController,
   message: string
 ) => {
-  controller.enqueue(`data: ${JSON.stringify({ message })}\n\n`);
+  const encoder = new TextEncoder();
+  controller.enqueue(
+    encoder.encode(`data: ${JSON.stringify({ message })}\n\n`)
+  );
 };
 
 /**
@@ -37,8 +55,13 @@ const createInitialContent = async (locals: App.Locals) => {
   ].join("\n");
 };
 
-export const POST: APIRoute = async ({ locals }) => {
+export const POST: APIRoute = async ({ locals, request }) => {
+  const runtime = locals.runtime;
+
   try {
+    // Load exposure settings first
+    await loadExposureSettings(locals.exposureSettings);
+
     // Create a stream to send progress events
     const stream = new ReadableStream({
       async start(controller) {
@@ -72,10 +95,19 @@ export const POST: APIRoute = async ({ locals }) => {
           sendProgress(controller, "Fetching collections...");
           const collectionsResponse = await getCollections({
             locals: { ...locals, progressCallback },
+            request,
+            url: new URL(request.url),
           } as any);
+
+          const collectionsData = (await collectionsResponse.json()) as
+            | ErrorResponse
+            | { collections: any[] };
           if (!collectionsResponse.ok) {
             throw new Error(
-              `Collections endpoint failed: ${collectionsResponse.statusText}`
+              `Collections endpoint failed: ${
+                (collectionsData as ErrorResponse).error ||
+                collectionsResponse.statusText
+              }`
             );
           }
 
@@ -84,10 +116,18 @@ export const POST: APIRoute = async ({ locals }) => {
           sendProgress(controller, "Fetching pages...");
           const pagesResponse = await getPages({
             locals: { ...locals, progressCallback },
+            request,
+            url: new URL(request.url),
           } as any);
+
+          const pagesData = (await pagesResponse.json()) as
+            | ErrorResponse
+            | ProcessedPage[];
           if (!pagesResponse.ok) {
             throw new Error(
-              `Pages endpoint failed: ${pagesResponse.statusText}`
+              `Pages endpoint failed: ${
+                (pagesData as ErrorResponse).error || pagesResponse.statusText
+              }`
             );
           }
 

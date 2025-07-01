@@ -1,7 +1,13 @@
+export const config = {
+  runtime: "edge",
+};
+
 import type { APIRoute } from "astro";
 import { fetchCollectionSchema } from "../../../utils/webflow/collections";
 
-export const GET: APIRoute = async ({ params, request }) => {
+export const GET: APIRoute = async ({ params, request, locals }) => {
+  const runtime = locals.runtime;
+
   try {
     const url = new URL(request.url);
     const collectionId = url.searchParams.get("id");

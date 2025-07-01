@@ -1,3 +1,7 @@
+export const config = {
+  runtime: "edge",
+};
+
 /**
  * @fileoverview API endpoint for saving collection exposure settings
  * This endpoint handles the persistence of collection and field visibility settings
@@ -50,6 +54,8 @@ import type { ExposureConfig } from "../../../utils/webflow-types";
  * @throws {500} Internal server error
  */
 export const POST: APIRoute = async ({ request, locals }) => {
+  const runtime = locals.runtime;
+
   try {
     const settings = (await request.json()) as ExposureConfig;
 
