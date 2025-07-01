@@ -1,6 +1,7 @@
 {
   "cloud": {
-    "framework": "astro"
+    "framework": "astro",
+    "project_id": "2a36d669-dd1a-4f7d-a42f-fcdca2a82768"
   },
   "devlink": {
     "rootDir": "./devlink",

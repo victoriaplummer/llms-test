@@ -1,0 +1,31 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { marked } from 'marked';
+import { createUrl } from '../../utils/paths';
+
+export const prerender = false;
+
+// Get the index content from KV
+const indexContent = await (function() {
+  const locals = Astro.locals as App.Locals;
+  return locals.webflowContent.get('llms.txt');
+})() || '# Documentation\n\nNo pages available.';
+
+// Convert markdown to HTML
+const html = marked.parse(indexContent);
+
+// Extract title from the first line (# Site Name)
+const title = indexContent.split('\n')[0].replace('# ', '') || 'Documentation';
+
+// Create home URL
+const homeUrl = createUrl('/');
+---
+
+<Layout title={title} description="Documentation Index">
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    <nav class="mb-8">
+      <a href={homeUrl} class="text-blue-600 hover:text-blue-800">← Back to Home</a>
+    </nav>
+    <div class="prose prose-lg" set:html={html} />
+  </div>
+</Layout> 

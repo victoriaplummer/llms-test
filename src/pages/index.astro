@@ -1,55 +1,21 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { Section, Container, Block, Link } from '../../devlink/_Builtin/Basic';
+import Welcome from '../components/Welcome.astro';
 ---
 
-<Layout>
-  <Section
-    client:load
-    tag="section"
-    className="margin-bottom-24px"
-    style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-  >
-    <Container>
-      <Block
-        tag="div"
-        className="hero-split"
-        style={{
-          textAlign: 'center',
-          maxWidth: '600px',
-          margin: '0 auto'
-        }}
-      >
-        <h1 class="margin-bottom-24px">Welcome to Webflow Cloud</h1>
-        <p class="margin-bottom-24px">This is a simple test using Basic components with enhanced styling.</p>
-        <div>
-          <Link
-            button={true}
-            options={{
-              href: "#"
-            }}
-            className="button-primary"
-          >
-            Get Started
-          </Link>
-        </div>
-      </Block>
-    </Container>
-  </Section>
+<Layout title="Webflow Cloud - llms.txt manager">
+  <Welcome />
 </Layout>
 
 <style>
-  h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    background: linear-gradient(83.21deg, #3245ff 0%, #bc52ee 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  :root {
+    --font-fallback: -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif;
+    --font-body: system-ui, var(--font-fallback);
+    --font-mono: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas,
+      monospace;
+  }
+  html {
+    font-family: var(--font-body);
+    background: #f8fafc;
   }
 </style>

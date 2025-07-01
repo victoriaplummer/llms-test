@@ -2,26 +2,58 @@ import { defineConfig } from "astro/config";
 
 import cloudflare from "@astrojs/cloudflare";
 
-import react from '@astrojs/react';
+import react from "@astrojs/react";
+
+import tailwind from "@astrojs/tailwind";
 
 // https://astro.build/config
 export default defineConfig({
-  base: "/llmstxt",
+  base: "/llms",
+  site: "http://localhost:4321",
+  trailingSlash: "ignore",
+  prefetch: true,
   output: "server",
+  markdown: {
+    syntaxHighlight: "prism",
+    remarkPlugins: [],
+    rehypePlugins: [],
+  },
   adapter: cloudflare({
     platformProxy: {
-      enabled: true
-    }
+      enabled: true,
+    },
+    mode: "directory",
+    runtime: {
+      mode: "local",
+      type: "pages",
+      bindings: {
+        // This name must match the KV namespace name in wrangler.toml
+        WEBFLOW_CONTENT: {
+          type: "kv",
+        },
+      },
+    },
   }),
 
-  integrations: [react()],
+  integrations: [react(), tailwind()],
   vite: {
-    resolve: {
-      // Use react-dom/server.edge instead of react-dom/server.browser for React 19.
-      // Without this, MessageChannel from node:worker_threads needs to be polyfilled.
-      alias: import.meta.env.PROD ? {
-        "react-dom/server": "react-dom/server.edge",
-      } : undefined,
+    build: {
+      commonjsOptions: {
+        transformMixedEsModules: true,
+      },
     },
-}
+    resolve: {
+      alias: {
+        ...(import.meta.env.PROD
+          ? {
+              "react-dom/server": "react-dom/server.edge",
+            }
+          : {}),
+      },
+    },
+    optimizeDeps: {
+      include: ["webflow-api"],
+      exclude: ["jsdom"],
+    },
+  },
 });
