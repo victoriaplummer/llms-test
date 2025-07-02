@@ -2,7 +2,7 @@ import type {
   ExposureConfig,
   ExposedCollection,
   WebflowCollectionField,
-} from "./webflow-types";
+} from "../types";
 import rawConfig from "../config/collections.json";
 
 const config = rawConfig as ExposureConfig;

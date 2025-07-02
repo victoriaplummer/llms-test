@@ -1,5 +1,5 @@
 import type { APIContext } from "astro";
-import type { MinimalKV } from "./types";
+import type { MinimalKV } from "../types";
 
 export const config = {
   runtime: "edge",
@@ -13,20 +13,18 @@ export const getKVContent = async (
   defaultValue: any = null
 ) => {
   try {
+    // Use KV from Cloudflare Worker env
+    const kv = (context.locals as any).runtime.env.WEBFLOW_CONTENT;
     console.log("[KV Debug] Attempting to get content:", {
       key,
       hasContext: !!context,
       hasLocals: !!context?.locals,
-      hasWebflowContent: !!context?.locals?.webflowContent,
-      webflowContentType: context?.locals?.webflowContent
-        ? typeof context.locals.webflowContent
-        : "undefined",
-      webflowContentMethods: context?.locals?.webflowContent
-        ? Object.keys(context.locals.webflowContent)
-        : [],
+      hasWebflowContent: !!kv,
+      webflowContentType: kv ? typeof kv : "undefined",
+      webflowContentMethods: kv ? Object.keys(kv) : [],
     });
 
-    const content = await context.locals.webflowContent.get(key);
+    const content = await kv.get(key);
 
     console.log("[KV Debug] Get result:", {
       key,

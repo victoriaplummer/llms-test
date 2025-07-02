@@ -1,8 +1,8 @@
 export const runtime = "edge";
 
-import type { WebflowNode, WebflowPageContentResponse } from "../webflow-types";
-import { webflow, withRateLimit, delay } from "./client";
-import type { MinimalKV } from "../types";
+import type { WebflowNode, WebflowPageContentResponse } from "../../types";
+import { withRateLimit, delay } from "./client";
+import type { MinimalKV } from "../../types";
 
 const CACHE_TTL = 3600; // 1 hour cache TTL
 const FETCH_TIMEOUT = 10000; // 10 second timeout for component fetching
@@ -67,12 +67,13 @@ function isValidCache(data: any): data is CachedData {
  * Should be called once at startup
  */
 export const initializeComponentsCache = async (
+  webflowClient: any,
   siteId: string,
   locals?: LocalsWithKV
 ) => {
   try {
     console.log("\nInitializing site-wide components cache");
-    const response = await fetchComponentsWithRetry(siteId);
+    const response = await fetchComponentsWithRetry(webflowClient, siteId);
     componentsCache[siteId] = response;
 
     // Store in persistent cache if available
@@ -115,6 +116,7 @@ export const initializeComponentsCache = async (
  * Fetches components list from cache first
  */
 export const fetchComponents = async (
+  webflowClient: any,
   siteId: string,
   locals?: LocalsWithKV
 ) => {
@@ -163,13 +165,14 @@ export const fetchComponents = async (
 
   // Initialize cache if not found
   console.log("[Components] No cache found, initializing components cache");
-  return initializeComponentsCache(siteId, locals);
+  return initializeComponentsCache(webflowClient, siteId, locals);
 };
 
 /**
  * Gets component content from cache or fetches it
  */
 export const fetchComponentContentWithCache = async (
+  webflowClient: any,
   siteId: string,
   componentId: string,
   locals?: LocalsWithKV
@@ -205,7 +208,11 @@ export const fetchComponentContentWithCache = async (
 
     // Cache miss, fetch and store
     console.log(`Cache miss for component ${componentId}, fetching from API`);
-    const content = await fetchAllComponentContent(siteId, componentId);
+    const content = await fetchAllComponentContent(
+      webflowClient,
+      siteId,
+      componentId
+    );
 
     // Store in both memory and KV cache
     const timestamp = Date.now();
@@ -235,12 +242,13 @@ export const fetchComponentContentWithCache = async (
  * Fetches components with retries and proper error handling
  */
 async function fetchComponentsWithRetry(
+  webflowClient: any,
   siteId: string,
   retryCount = 0
 ): Promise<any> {
   try {
     await delay(500); // Initial delay to respect rate limits
-    return await withRateLimit(() => webflow.components.list(siteId));
+    return await withRateLimit(() => webflowClient.components.list(siteId));
   } catch (error) {
     if (
       error &&
@@ -257,7 +265,7 @@ async function fetchComponentsWithRetry(
         }/${MAX_RETRIES})`
       );
       await delay(backoffDelay);
-      return fetchComponentsWithRetry(siteId, retryCount + 1);
+      return fetchComponentsWithRetry(webflowClient, siteId, retryCount + 1);
     }
     throw error;
   }
@@ -265,16 +273,18 @@ async function fetchComponentsWithRetry(
 
 /**
  * Gets component metadata by ID
+ * @param webflowClient - The Webflow client
  * @param siteId - The site ID
  * @param componentId - The component ID to look up
  * @returns Component metadata if found
  */
 export const getComponentMetadata = async (
+  webflowClient: any,
   siteId: string,
   componentId: string
 ) => {
   console.log(`\nLooking up metadata for component: ${componentId}`);
-  const components = await fetchComponents(siteId);
+  const components = await fetchComponents(webflowClient, siteId);
   const component = components?.components?.find(
     (c: any) => c.id === componentId
   );
@@ -291,12 +301,14 @@ export const getComponentMetadata = async (
 
 /**
  * Fetches all content for a component using pagination
+ * @param webflowClient - The Webflow client
  * @param siteId - The Webflow site ID
  * @param componentId - The component ID
  * @param pageSize - Number of items per page (default: 100, max: 100)
  * @returns Promise resolving to array of all component nodes
  */
 export const fetchAllComponentContent = async (
+  webflowClient: any,
   siteId: string,
   componentId: string,
   pageSize = 100
@@ -304,38 +316,28 @@ export const fetchAllComponentContent = async (
   let allNodes: WebflowNode[] = [];
   let offset = 0;
   let hasMore = true;
-
   while (hasMore) {
-    // Add delay between paginated requests
     if (offset > 0) {
       await delay(500);
     }
-
     const response = (await withRateLimit(() =>
-      webflow.components.getContent(siteId, componentId, {
+      webflowClient.components.getContent(siteId, componentId, {
         limit: pageSize,
         offset: offset,
       })
     )) as WebflowPageContentResponse;
-
     if (!response?.nodes?.length) {
       break;
     }
-
     allNodes = [...allNodes, ...response.nodes];
-
-    // Check if we've fetched all content
-    // Note: Some components might not have pagination
     const pagination = response.pagination;
     if (!pagination) {
       break;
     }
-
     const { total, limit } = pagination;
     offset += limit;
     hasMore = offset < total;
   }
-
   return allNodes;
 };
 
@@ -343,6 +345,7 @@ export const fetchAllComponentContent = async (
  * Fetches an image asset with caching
  */
 export const fetchImageAssetWithCache = async (
+  webflowClient: any,
   assetId: string,
   locals?: { webflowContent: MinimalKV }
 ): Promise<string | null> => {
@@ -351,6 +354,9 @@ export const fetchImageAssetWithCache = async (
     const cached = imageAssetsCache[assetId];
     // Cache for 1 hour
     if (Date.now() - cached.timestamp < CACHE_TTL * 1000) {
+      console.log(
+        `[ImageCache] Returning from memory cache for asset ${assetId}`
+      );
       return cached.url;
     }
   }
@@ -367,15 +373,25 @@ export const fetchImageAssetWithCache = async (
       ) {
         // Update memory cache
         imageAssetsCache[assetId] = parsedCache;
+        console.log(
+          `[ImageCache] Returning from KV cache for asset ${assetId}`
+        );
         return parsedCache.url;
       }
     }
+  } else {
+    console.warn(
+      `[ImageCache] No webflowContent KV provided for asset ${assetId}`
+    );
   }
 
   try {
     // Fetch from API
     await delay(500);
-    const asset = await withRateLimit(() => webflow.assets.get(assetId));
+    console.log(`[ImageCache] Fetching asset ${assetId} from API`);
+    const asset = (await withRateLimit(() =>
+      webflowClient.assets.get(assetId)
+    )) as { hostedUrl?: string };
     const url = asset?.hostedUrl;
 
     if (url) {
@@ -392,6 +408,7 @@ export const fetchImageAssetWithCache = async (
           cacheKey,
           JSON.stringify(imageAssetsCache[assetId])
         );
+        console.log(`[ImageCache] Stored asset ${assetId} in KV cache`);
       }
 
       return url;
@@ -407,6 +424,7 @@ export const fetchImageAssetWithCache = async (
  * Fetches all assets for a site and caches them
  */
 export const fetchAllAssetsWithCache = async (
+  webflowClient: any,
   siteId: string,
   locals?: { webflowContent: MinimalKV }
 ): Promise<void> => {
@@ -438,7 +456,7 @@ export const fetchAllAssetsWithCache = async (
       }
 
       const response = (await withRateLimit(() =>
-        webflow.assets.list(siteId)
+        webflowClient.assets.list(siteId)
       )) as WebflowAssetsResponse;
 
       if (!response?.items?.length) {

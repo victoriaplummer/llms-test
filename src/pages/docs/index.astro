@@ -5,10 +5,10 @@ import { createUrl } from '../../utils/paths';
 
 export const prerender = false;
 
-// Get the index content from KV
-const indexContent = await (function() {
-  const locals = Astro.locals as App.Locals;
-  return locals.webflowContent.get('llms.txt');
+// Get the index content from KV (Cloudflare Worker env)
+const indexContent = await (async function() {
+  const env = (Astro.locals as any).runtime.env;
+  return await env.WEBFLOW_CONTENT.get('llms.txt');
 })() || '# Documentation\n\nNo pages available.';
 
 // Convert markdown to HTML
@@ -21,7 +21,7 @@ const title = indexContent.split('\n')[0].replace('# ', '') || 'Documentation';
 const homeUrl = createUrl('/');
 ---
 
-<Layout title={title} description="Documentation Index">
+<Layout title={title}>
   <div class="max-w-3xl mx-auto px-4 py-8">
     <nav class="mb-8">
       <a href={homeUrl} class="text-blue-600 hover:text-blue-800">← Back to Home</a>

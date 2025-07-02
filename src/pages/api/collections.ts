@@ -7,11 +7,8 @@ import {
   fetchCollections,
   fetchAllCollectionItems,
   fetchCollectionSchema,
-} from "../../utils/webflow-client";
-import type {
-  WebflowCollection,
-  WebflowCollectionField,
-} from "../../utils/webflow-types";
+} from "../../utils/webflow/collections";
+import type { WebflowCollection, WebflowCollectionField } from "../../types";
 import { NodeHtmlMarkdown } from "node-html-markdown";
 import {
   isCollectionExposed,
@@ -21,6 +18,7 @@ import {
   loadExposureSettings,
 } from "../../utils/collection-exposure";
 import { updateLLMSSection } from "../../utils/kv-helpers";
+import { createWebflowClient } from "../../utils/webflow/client";
 
 // Initialize NodeHtmlMarkdown with GitHub-flavored Markdown options
 const nhm = new NodeHtmlMarkdown({
@@ -49,10 +47,13 @@ let collectionRefsCache: Record<string, string> = {};
 /**
  * Resolves a collection reference ID to its name
  */
-async function resolveCollectionRef(collectionId: string): Promise<string> {
+async function resolveCollectionRef(
+  webflowClient: any,
+  collectionId: string
+): Promise<string> {
   if (!collectionRefsCache[collectionId]) {
     try {
-      const schema = await fetchCollectionSchema(collectionId);
+      const schema = await fetchCollectionSchema(webflowClient, collectionId);
       collectionRefsCache[collectionId] = schema.name;
     } catch (error) {
       console.error(`Error resolving collection ref ${collectionId}:`, error);
@@ -217,21 +218,24 @@ function formatCollectionUrl(name: string): string {
 }
 
 export const GET: APIRoute = async ({ locals }) => {
-  const runtime = locals.runtime;
+  const siteId = (locals as any).runtime.env.WEBFLOW_SITE_ID;
+  const accessToken = (locals as any).runtime.env.WEBFLOW_SITE_API_TOKEN;
+  if (!siteId) throw new Error("WEBFLOW_SITE_ID is not defined");
+  if (!accessToken) throw new Error("WEBFLOW_API_TOKEN is not defined");
+
+  const webflowClient = createWebflowClient(accessToken);
+  const webflowContent = (locals as any).webflowContent;
+  const exposureSettings = (locals as any).exposureSettings;
 
   try {
     console.log("Starting collections endpoint");
-    const siteId = import.meta.env.PUBLIC_WEBFLOW_SITE_ID;
-    if (!siteId) {
-      throw new Error("PUBLIC_WEBFLOW_SITE_ID is not defined");
-    }
 
     // Load exposure settings from KV
-    await loadExposureSettings(locals.exposureSettings);
+    await loadExposureSettings(exposureSettings);
 
     // Fetch all collections
     console.log("Fetching collections for site:", siteId);
-    const collections = await fetchCollections(siteId);
+    const collections = await fetchCollections(webflowClient, siteId);
     console.log(`Found ${collections.length} collections`);
 
     // Filter to only exposed collections
@@ -261,7 +265,6 @@ export const GET: APIRoute = async ({ locals }) => {
 
     // Prepare collections content for llms.txt
     const collectionsContent = [
-      // Only include the Collections section content
       "The following collections are available in the Webflow site:",
       "",
     ];
@@ -270,7 +273,7 @@ export const GET: APIRoute = async ({ locals }) => {
     for (const collection of exposedCollections) {
       try {
         console.log(`\nProcessing collection: ${collection.displayName}`);
-        locals.progressCallback?.("Processing collections...");
+        // No progressCallback on locals, skip
 
         // Get collection config
         const config = getCollectionConfig(collection._id);
@@ -292,11 +295,16 @@ export const GET: APIRoute = async ({ locals }) => {
 
         // Fetch collection schema
         console.log(`Fetching schema for collection ${collection._id}`);
-        const schema = await fetchCollectionSchema(collection._id);
+        const schema = await fetchCollectionSchema(
+          webflowClient,
+          collection._id
+        );
         console.log("Got schema:", schema.name);
 
         // Create a map of field slugs to field definitions and filter exposed fields
-        const fieldMap = new Map(schema.fields.map((f) => [f.name, f]));
+        const fieldMap = new Map<string, WebflowCollectionField>(
+          schema.fields.map((f: WebflowCollectionField) => [f.name, f])
+        );
         const exposedFieldMap = filterExposedFields(collection._id, fieldMap);
 
         // Skip if no fields are exposed
@@ -309,16 +317,17 @@ export const GET: APIRoute = async ({ locals }) => {
 
         // Fetch items
         console.log(`Fetching items for collection ${collection._id}`);
-        const items = await fetchAllCollectionItems(collection._id);
+        const items = await fetchAllCollectionItems(
+          webflowClient,
+          collection._id
+        );
         console.log(`Found ${items.length} items`);
-
-        const basePath = import.meta.env.BASE_URL;
 
         // Add collection to llms.txt content with formatted URL
         collectionsContent.push(
           `- [${
             config.displayName || collection.displayName
-          }](${basePath}/collections/${collectionUrl}.md): ${
+          }](<BASE_URL>/collections/${collectionUrl}.md): ${
             config.description || `Collection with ${items.length} items`
           }`
         );
@@ -472,8 +481,8 @@ export const GET: APIRoute = async ({ locals }) => {
 
         // Store with both URLs
         const baseKey = `collections/${collectionUrl}`;
-        await locals.webflowContent.put(baseKey, markdownContent);
-        await locals.webflowContent.put(`${baseKey}.md`, markdownContent);
+        await webflowContent.put(baseKey, markdownContent);
+        await webflowContent.put(`${baseKey}.md`, markdownContent);
       } catch (collectionError) {
         console.error(
           `Error processing collection ${collection._id}:`,
@@ -487,16 +496,11 @@ export const GET: APIRoute = async ({ locals }) => {
 
     // Update Collections section in llms.txt
     console.log("Updating Collections section in llms.txt");
-    locals.progressCallback?.("Updating collections section...");
-    await updateLLMSSection(
-      locals.webflowContent,
-      "Collections",
-      collectionsContent
-    );
+    await updateLLMSSection(webflowContent, "Collections", collectionsContent);
     console.log("Successfully updated Collections section");
 
     // Verify KV contents after processing
-    const keys = await locals.webflowContent.list();
+    const keys = await webflowContent.list();
     console.log("Final KV store contents:", keys);
 
     return new Response(

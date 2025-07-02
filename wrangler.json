@@ -14,7 +14,8 @@
   "kv_namespaces": [
     {
       "binding": "WEBFLOW_CONTENT",
-      "id": "8e83a86e33b541338700795162251e43"
+      "id": "8e83a86e33b541338700795162251e43",
+      "preview_id": "379f5c791fbf4167800d59dbd9cb24ae"
     },
     {
       "binding": "EXPOSURE_SETTINGS",

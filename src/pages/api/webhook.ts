@@ -16,7 +16,8 @@ interface CollectionsResponse {
 }
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const runtime = locals.runtime;
+  // Use env directly from locals
+  const env = (locals as any).runtime.env;
 
   try {
     console.log("Received webhook from Webflow");
@@ -51,7 +52,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         pagesProcessed: pagesResult.pagesProcessed || 0,
         collectionsProcessed:
           collectionsResult.message || "Collections updated",
-        llmstxt: `${import.meta.env._BASE_URL}/llms.txt`,
+        llmstxt: `${env.BASE_URL}/llms.txt`, // Use env.BASE_URL from runtime
       }),
       {
         status: 200,

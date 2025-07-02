@@ -11,21 +11,27 @@ interface PageConfig {
 }
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const runtime = locals.runtime;
   try {
     const pageSettings = (await request.json()) as Record<string, PageConfig>;
+    console.log("Incoming pageSettings:", pageSettings);
 
     // Load existing settings
-    const existingSettings = await locals.exposureSettings.get("settings");
+    const existingSettings = await (locals as any).exposureSettings.get(
+      "settings"
+    );
     const settings = existingSettings
       ? JSON.parse(existingSettings)
       : { collections: {}, pages: {} };
 
-    // Update page settings
+    // Update pages only
     settings.pages = pageSettings;
+    console.log("Final settings to save:", settings);
 
-    // Store settings in KV
-    await locals.exposureSettings.put("settings", JSON.stringify(settings));
+    // Save merged settings
+    await (locals as any).exposureSettings.put(
+      "settings",
+      JSON.stringify(settings)
+    );
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

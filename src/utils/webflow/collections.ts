@@ -4,8 +4,8 @@ import type {
   WebflowCollectionItemsResponse,
   WebflowCollectionSchema,
   WebflowCollectionField,
-} from "../webflow-types";
-import { webflow, withRateLimit, delay } from "./client";
+} from "../../types";
+import { withRateLimit, delay } from "./client";
 
 // Cache for collections
 let collectionsCache: Record<string, WebflowCollection[]> = {};
@@ -35,15 +35,17 @@ interface CollectionResponse {
 
 /**
  * Fetches collection schema with field definitions
+ * @param webflowClient - The webflow client
  * @param collectionId - The collection ID
  * @returns Promise resolving to collection schema
  */
 export const fetchCollectionSchema = async (
+  webflowClient: any, // Use correct type if available
   collectionId: string
 ): Promise<WebflowCollectionSchema> => {
   if (!collectionSchemasCache[collectionId]) {
     const apiResponse = (await withRateLimit(() =>
-      webflow.collections.get(collectionId)
+      webflowClient.collections.get(collectionId)
     )) as unknown as CollectionResponse;
 
     if (!apiResponse) {
@@ -83,10 +85,12 @@ export const fetchCollectionSchema = async (
 
 /**
  * Fetches all collections for a site
+ * @param webflowClient - The webflow client
  * @param siteId - The site ID
  * @returns Promise resolving to array of collections
  */
 export const fetchCollections = async (
+  webflowClient: any, // Use correct type if available
   siteId: string
 ): Promise<WebflowCollection[]> => {
   if (!collectionsCache[siteId]) {
@@ -94,7 +98,7 @@ export const fetchCollections = async (
 
     // Call collections.list with siteId as direct parameter and cast to any to access raw response
     const response = (await withRateLimit(() =>
-      webflow.collections.list(siteId)
+      webflowClient.collections.list(siteId)
     )) as any;
 
     console.log("\nCollections response:", JSON.stringify(response, null, 2));
@@ -105,12 +109,17 @@ export const fetchCollections = async (
         console.log("\nProcessing collection:", collection.id);
 
         // Fetch schema for each collection to get fields
-        const schema = await fetchCollectionSchema(collection.id);
+        const schema = await fetchCollectionSchema(
+          webflowClient,
+          collection.id
+        );
 
         // Fetch first page of items to get total count
         console.log("\nFetching items count for collection:", collection.id);
         const itemsResponse = (await withRateLimit(() =>
-          webflow.collections.items.listItemsLive(collection.id, { limit: 1 })
+          webflowClient.collections.items.listItemsLive(collection.id, {
+            limit: 1,
+          })
         )) as WebflowCollectionItemsResponse;
 
         console.log(
@@ -138,11 +147,13 @@ export const fetchCollections = async (
 
 /**
  * Resolves a single reference field by fetching the referenced item
+ * @param webflowClient - The webflow client
  * @param collectionId - The collection ID containing the referenced item
  * @param itemId - The ID of the referenced item
  * @returns Promise resolving to the referenced item data with collection info
  */
 async function resolveReference(
+  webflowClient: any,
   collectionId: string,
   itemId: string
 ): Promise<{
@@ -162,11 +173,11 @@ async function resolveReference(
 
   try {
     // Get collection info first
-    const schema = await fetchCollectionSchema(collectionId);
+    const schema = await fetchCollectionSchema(webflowClient, collectionId);
 
     // Fetch the referenced item
     const response = (await withRateLimit(() =>
-      webflow.collections.items.getItemLive(collectionId, itemId)
+      webflowClient.collections.items.getItemLive(collectionId, itemId)
     )) as WebflowCollectionItem;
 
     if (!response) {
@@ -198,17 +209,20 @@ async function resolveReference(
 
 /**
  * Resolves all reference fields in an item's data
+ * @param webflowClient - The webflow client
  * @param item - The collection item containing reference fields
  * @param schema - The collection schema defining field types
  * @returns Promise resolving to item data with resolved references
  */
 export async function resolveReferenceFields(
+  webflowClient: any,
   item: WebflowCollectionItem,
   schema: WebflowCollectionSchema
 ): Promise<WebflowCollectionItem> {
   const resolvedItem = { ...item };
   const referenceFields = schema.fields.filter(
-    (field) => field.type === "Reference" || field.type === "MultiReference"
+    (field: WebflowCollectionField) =>
+      field.type === "Reference" || field.type === "MultiReference"
   );
 
   // No reference fields, return original item
@@ -233,7 +247,11 @@ export async function resolveReferenceFields(
 
       if (field.type === "Reference") {
         // Single reference
-        const referencedItem = await resolveReference(collectionId, fieldValue);
+        const referencedItem = await resolveReference(
+          webflowClient,
+          collectionId,
+          fieldValue
+        );
         if (referencedItem) {
           resolvedItem.fieldData[field.name] = referencedItem;
         }
@@ -243,6 +261,7 @@ export async function resolveReferenceFields(
           (Array.isArray(fieldValue) ? fieldValue : [fieldValue]).map(
             async (refId) => {
               const referencedItem = await resolveReference(
+                webflowClient,
                 collectionId,
                 refId
               );
@@ -262,11 +281,13 @@ export async function resolveReferenceFields(
 
 /**
  * Fetches all published items from a collection using pagination
+ * @param webflowClient - The webflow client
  * @param collectionId - The collection ID
  * @param pageSize - Number of items per page (default: 100, max: 100)
  * @returns Promise resolving to array of all published collection items
  */
 export const fetchAllCollectionItems = async (
+  webflowClient: any,
   collectionId: string,
   pageSize = 100
 ): Promise<WebflowCollectionItem[]> => {
@@ -275,7 +296,7 @@ export const fetchAllCollectionItems = async (
   let hasMore = true;
 
   // Fetch schema first to identify reference fields
-  const schema = await fetchCollectionSchema(collectionId);
+  const schema = await fetchCollectionSchema(webflowClient, collectionId);
 
   while (hasMore) {
     if (currentOffset > 0) {
@@ -286,7 +307,7 @@ export const fetchAllCollectionItems = async (
       `\nFetching items for collection ${collectionId} (offset: ${currentOffset})`
     );
     const response = (await withRateLimit(() =>
-      webflow.collections.items.listItemsLive(collectionId, {
+      webflowClient.collections.items.listItemsLive(collectionId, {
         limit: pageSize,
         offset: currentOffset,
       })
@@ -300,7 +321,9 @@ export const fetchAllCollectionItems = async (
 
     // Resolve references for each item
     const resolvedItems = await Promise.all(
-      response.items.map((item) => resolveReferenceFields(item, schema))
+      response.items.map((item: WebflowCollectionItem) =>
+        resolveReferenceFields(webflowClient, item, schema)
+      )
     );
 
     allItems = [...allItems, ...resolvedItems];

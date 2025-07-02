@@ -1,46 +1,31 @@
-/**
- * @fileoverview Type definitions for Webflow API integration
- *
- * This file contains TypeScript type definitions for working with the Webflow API
- * and managing collection exposure settings. It includes types for:
- * - Webflow API responses
- * - Collection and field configurations
- * - Page content and metadata
- * - Component data structures
- *
- * @example Basic usage with collections
- * ```typescript
- * const collection: WebflowCollection = {
- *   _id: "123",
- *   name: "blog-posts",
- *   displayName: "Blog Posts",
- *   itemCount: 10,
- *   fields: []
- * };
- *
- * const exposureConfig: ExposureConfig = {
- *   collections: {
- *     "123": {
- *       id: "123",
- *       displayName: "Blog Posts",
- *       description: "Our blog posts collection",
- *       fields: {
- *         "title": {
- *           include: true,
- *           displayName: "Post Title",
- *           description: "The title of the blog post"
- *         }
- *       }
- *     }
- *   }
- * };
- * ```
- */
+// Consolidated types for the project
 
-/**
- * Represents a Webflow node with its various possible types and properties
- * Can be a text node, image, form element, or component instance
- */
+// KV types
+export interface KVNamespaceListKey {
+  name: string;
+  expiration?: number;
+  metadata?: object;
+}
+
+export interface KVNamespaceListResult {
+  keys: KVNamespaceListKey[];
+  list_complete: boolean;
+  cursor?: string;
+  cacheStatus?: string | null;
+}
+
+export interface MinimalKV {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
+  list(options?: {
+    prefix?: string;
+    limit?: number;
+    cursor?: string;
+  }): Promise<KVNamespaceListResult>;
+}
+
+// Webflow types
 export interface WebflowNode {
   id: string;
   type: string;
@@ -70,17 +55,11 @@ export interface WebflowNode {
   [key: string]: any;
 }
 
-/**
- * Response structure from Webflow's getContent API for components
- */
 export interface ComponentData {
   nodes: WebflowNode[];
   pagination?: WebflowPagination;
 }
 
-/**
- * Page metadata from Webflow
- */
 export interface PageMetadata {
   id: string;
   title: string;
@@ -89,18 +68,12 @@ export interface PageMetadata {
   last_updated: string;
 }
 
-/**
- * Webflow pagination metadata
- */
 export interface WebflowPagination {
   limit: number;
   offset: number;
   total: number;
 }
 
-/**
- * Webflow page data
- */
 export interface WebflowPage {
   id: string;
   siteId: string;
@@ -121,9 +94,6 @@ export interface WebflowPage {
   };
 }
 
-/**
- * Webflow pages list response
- */
 export interface WebflowPagesResponse {
   pages: WebflowPage[];
   pagination: {
@@ -133,9 +103,6 @@ export interface WebflowPagesResponse {
   };
 }
 
-/**
- * Processed page data structure
- */
 export interface ProcessedPage {
   id: string;
   content: string[];
@@ -143,17 +110,11 @@ export interface ProcessedPage {
   metadata?: PageMetadata;
 }
 
-/**
- * Webflow page content response
- */
 export interface WebflowPageContentResponse {
   nodes: WebflowNode[];
   pagination: WebflowPagination;
 }
 
-/**
- * Webflow collection data
- */
 export interface WebflowCollection {
   _id: string;
   name: string;
@@ -162,9 +123,6 @@ export interface WebflowCollection {
   fields: WebflowCollectionField[];
 }
 
-/**
- * Webflow collection item data
- */
 export interface WebflowCollectionItem {
   id: string;
   lastPublished: string;
@@ -177,9 +135,6 @@ export interface WebflowCollectionItem {
   collectionName?: string;
 }
 
-/**
- * Webflow collection items response
- */
 export interface WebflowCollectionItemsResponse {
   items: WebflowCollectionItem[];
   pagination: {
@@ -189,9 +144,6 @@ export interface WebflowCollectionItemsResponse {
   };
 }
 
-/**
- * Webflow collection schema field
- */
 export interface WebflowCollectionField {
   _id: string;
   name: string;
@@ -202,9 +154,6 @@ export interface WebflowCollectionField {
   validations: Record<string, any>;
 }
 
-/**
- * Webflow collection schema
- */
 export interface WebflowCollectionSchema {
   _id: string;
   lastUpdated: string;
@@ -215,53 +164,23 @@ export interface WebflowCollectionSchema {
   fields: WebflowCollectionField[];
 }
 
-/**
- * Webflow collections response
- */
 export interface WebflowCollectionsResponse {
   collections: WebflowCollection[];
 }
 
-/**
- * Configuration for exposed collection fields
- * This type is used to control how collection fields are exposed in the public API
- * and documentation.
- *
- * @example
- * ```typescript
- * const fieldConfig: CollectionFieldExposure = {
- *   displayName: "Author Name",
- *   include: true,
- *   description: "The full name of the post author"
- * };
- * ```
- */
 export interface CollectionFieldExposure {
-  /** Display name to use in the documentation */
   displayName?: string;
-  /** Whether to include this field in the documentation */
   include: boolean;
-  /** Optional description of the field */
   description?: string;
 }
 
-/**
- * Configuration for an exposed collection
- */
 export interface ExposedCollection {
-  /** Collection ID from Webflow */
   id: string;
-  /** Override the collection name in documentation */
   displayName?: string;
-  /** Collection description */
   description?: string;
-  /** Fields to expose and their configuration */
   fields: Record<string, CollectionFieldExposure>;
 }
 
-/**
- * Configuration for all exposed collections
- */
 export interface ExposureConfig {
   collections: Record<
     string,

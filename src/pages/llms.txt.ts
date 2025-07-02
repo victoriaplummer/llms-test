@@ -5,8 +5,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
     // Log the incoming request URL for debugging
     console.log("Incoming request URL:", url.toString());
 
-    // Get llms.txt content from KV
-    const content = await locals.webflowContent.get("llms.txt");
+    // Get llms.txt content from KV (Cloudflare Worker env)
+    const content = await (locals as any).webflowContent.get("llms.txt");
 
     // Log the content we got
     console.log("Retrieved content:", content);

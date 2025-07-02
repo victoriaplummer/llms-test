@@ -5,7 +5,11 @@ import {
   fetchAllAssetsWithCache,
   getAssetUrl,
 } from "../utils/webflow/components";
-import { webflow, delay, withRateLimit } from "../utils/webflow/client";
+import {
+  createWebflowClient,
+  delay,
+  withRateLimit,
+} from "../utils/webflow/client";
 import { fetchAllPageContent } from "../utils/webflow/pages";
 import { createMarkdownConverter, mergeAttributes } from "../utils/markdown";
 import type {
@@ -13,7 +17,10 @@ import type {
   ComponentData,
   PageMetadata,
   ProcessedPage,
-} from "../utils/webflow-types";
+} from "../types";
+import { NodeHtmlMarkdown } from "node-html-markdown";
+
+const nhm = new NodeHtmlMarkdown();
 
 /**
  * Applies property overrides from a component instance to its content nodes
@@ -26,7 +33,7 @@ const applyPropertyOverrides = (
   overrides: WebflowNode["propertyOverrides"] = []
 ): WebflowNode[] => {
   return content.map((node) => {
-    const override = overrides.find((o) => o.propertyId === node.id);
+    const override = overrides.find((o: any) => o.propertyId === node.id);
     if (!override) return node;
 
     switch (override.type) {
@@ -204,35 +211,47 @@ const isNavigationOrFooterComponent = async (
  */
 export const processWebflowPage = async (
   pageId: string,
-  locals: { webflowContent: App.Locals["webflowContent"] }
+  locals: any // Accept any, or type as { runtime: { env: ... } }
 ): Promise<ProcessedPage> => {
-  const siteId = import.meta.env.PUBLIC_WEBFLOW_SITE_ID;
-  if (!siteId) {
-    throw new Error("PUBLIC_WEBFLOW_SITE_ID is not defined");
-  }
+  // Get env and create client
+  const siteId = (locals as any).runtime.env.WEBFLOW_SITE_ID;
+  const accessToken = (locals as any).runtime.env.WEBFLOW_SITE_API_TOKEN;
+  const webflowClient = createWebflowClient(accessToken);
+  const webflowContent = (locals as any).webflowContent;
+  const basePath = (locals as any).runtime.env.BASE_URL;
 
-  // Get components list from cache - should be initialized at startup
-  const components = await fetchComponents(siteId, locals);
-  if (!components) {
-    throw new Error("Components list not found in cache");
-  }
+  if (!siteId) throw new Error("WEBFLOW_SITE_ID is not defined");
+  if (!accessToken) throw new Error("WEBFLOW_SITE_API_TOKEN is not defined");
+
+  // Get components list from cache
+  const components = await fetchComponents(webflowClient, siteId, {
+    webflowContent,
+  });
+  if (!components) throw new Error("Components list not found in cache");
 
   // Get page content from cache
-  const content = await fetchAllPageContent(pageId, locals);
+  const content = await fetchAllPageContent(
+    webflowClient,
+    webflowContent,
+    pageId
+  );
 
   // Get page metadata
-  const page = await withRateLimit(() => webflow.pages.list(siteId));
-  const pageData = page?.pages?.find((p) => p.id === pageId);
-  if (!pageData) {
-    throw new Error(`Page ${pageId} not found`);
-  }
+  const page = (await withRateLimit(() =>
+    webflowClient.pages.list(siteId)
+  )) as { pages?: any[] };
+  const pageData = page?.pages?.find((p: any) => p.id === pageId);
+  if (!pageData) throw new Error(`Page ${pageId} not found`);
 
   // Use 'index' for root page, otherwise use the slug
   const slug =
     !pageData.slug || pageData.slug === "/" ? "index" : pageData.slug;
 
   // Clean content
-  const cleanedContent = await cleanContent(content, components);
+  const cleanedContent = await cleanContent(content, components, undefined, {
+    webflowClient,
+    webflowContent,
+  });
 
   // Create markdown content
   const markdownContent = [
@@ -249,10 +268,9 @@ export const processWebflowPage = async (
   ].join("\n");
 
   // Store with both URLs
-  const basePath = import.meta.env.BASE_URL;
   const baseKey = `docs/${slug}`;
-  await locals.webflowContent.put(baseKey, markdownContent);
-  await locals.webflowContent.put(`${baseKey}.md`, markdownContent);
+  await webflowContent.put(baseKey, markdownContent);
+  await webflowContent.put(`${baseKey}.md`, markdownContent);
 
   return {
     id: pageId,
@@ -282,11 +300,9 @@ const cleanContent = async (
   content: WebflowNode[],
   components: any,
   componentId?: string,
-  locals?: { webflowContent: App.Locals["webflowContent"] }
+  locals?: { webflowClient: any; webflowContent: any }
 ): Promise<string[]> => {
   if (!content) return [];
-
-  const turndownService = createMarkdownConverter();
 
   const cleanedNodes = await Promise.all(
     content.map(async (node): Promise<string> => {
@@ -322,7 +338,7 @@ const cleanContent = async (
           const options =
             node.choices
               ?.map(
-                (choice) =>
+                (choice: any) =>
                   `<option value="${choice.value}">${choice.text}</option>`
               )
               .join("") || "";
@@ -391,17 +407,17 @@ const cleanContent = async (
               return "";
             }
 
-            // Get component content from cache
-            const siteId = import.meta.env.PUBLIC_WEBFLOW_SITE_ID;
-            if (!siteId) {
-              throw new Error("PUBLIC_WEBFLOW_SITE_ID is not defined");
-            }
-
             // Use the cached component content
+            const siteId = (locals as any)?.webflowClient
+              ? (locals as any).webflowClient.siteId
+              : undefined;
+            const webflowClient = (locals as any)?.webflowClient;
+            const webflowContent = (locals as any)?.webflowContent;
             const componentNodes = await fetchComponentContentWithCache(
+              webflowClient,
               siteId,
               node.componentId,
-              locals
+              { webflowContent }
             );
 
             if (!componentNodes?.length) {
@@ -422,7 +438,7 @@ const cleanContent = async (
               overriddenContent,
               components,
               node.componentId,
-              locals
+              { webflowClient, webflowContent }
             );
 
             return cleanedComponentContent.join("");
@@ -440,7 +456,7 @@ const cleanContent = async (
       }
 
       // Convert HTML to Markdown and clean up
-      let markdown = turndownService.turndown(htmlContent);
+      let markdown = nhm.translate(htmlContent);
 
       // Clean up extra whitespace and line breaks
       markdown = markdown.replace(/\n{3,}/g, "\n\n").replace(/^\s+|\s+$/g, "");

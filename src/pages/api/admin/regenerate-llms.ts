@@ -5,8 +5,8 @@ export const config = {
 import type { APIRoute } from "astro";
 import { GET as getCollections } from "../collections";
 import { GET as getPages } from "../pages";
-import { webflow } from "../../../utils/webflow/client";
-import type { WebflowSite, ProcessedPage } from "../../../utils/webflow-types";
+import { createWebflowClient } from "../../../utils/webflow/client";
+import type { ProcessedPage } from "../../../types";
 import {
   loadExposureSettings,
   isCollectionExposed,
@@ -34,10 +34,14 @@ const sendProgress = (
  * Creates the initial llms.txt content
  */
 const createInitialContent = async (locals: App.Locals) => {
-  // Get site info
-  const siteId = import.meta.env.PUBLIC_WEBFLOW_SITE_ID;
+  // Get site info from Cloudflare Worker env
+  const siteId = (locals as any).runtime.env.WEBFLOW_SITE_ID;
+  const accessToken = (locals as any).runtime.env.WEBFLOW_SITE_API_TOKEN;
+  if (!accessToken) throw new Error("Missing Webflow API token");
+  const webflow = createWebflowClient(accessToken);
+
   const sites = await webflow.sites.list();
-  const site = sites?.sites?.find((s) => s.id === siteId);
+  const site = sites?.sites?.find((s: any) => s.id === siteId);
 
   return [
     `# ${site?.displayName || "Webflow Documentation"}`,
@@ -56,11 +60,9 @@ const createInitialContent = async (locals: App.Locals) => {
 };
 
 export const POST: APIRoute = async ({ locals, request }) => {
-  const runtime = locals.runtime;
-
   try {
     // Load exposure settings first
-    await loadExposureSettings(locals.exposureSettings);
+    await loadExposureSettings((locals as any).exposureSettings);
 
     // Create a stream to send progress events
     const stream = new ReadableStream({
@@ -69,8 +71,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
           console.log("Starting llms.txt regeneration");
           sendProgress(controller, "Initializing...");
 
-          // Create a progress callback that checks if controller is still active
-          const progressCallback = (step: string) => {
+          // Attach progressCallback directly to the existing locals object
+          (locals as any).progressCallback = (step: string) => {
             try {
               sendProgress(controller, step);
             } catch (error) {
@@ -88,13 +90,13 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
           // Create initial content
           const initialContent = await createInitialContent(locals);
-          await locals.webflowContent.put("llms.txt", initialContent);
+          await (locals as any).webflowContent.put("llms.txt", initialContent);
 
           // Call collections endpoint with progress callback
           console.log("Regenerating collections content...");
           sendProgress(controller, "Fetching collections...");
           const collectionsResponse = await getCollections({
-            locals: { ...locals, progressCallback },
+            locals,
             request,
             url: new URL(request.url),
           } as any);
@@ -115,7 +117,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
           console.log("Regenerating pages content...");
           sendProgress(controller, "Fetching pages...");
           const pagesResponse = await getPages({
-            locals: { ...locals, progressCallback },
+            locals,
             request,
             url: new URL(request.url),
           } as any);

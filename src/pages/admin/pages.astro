@@ -1,20 +1,26 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import PageManager from '../../components/PageManager';
-import { webflow } from '../../utils/webflow/client';
+import { createWebflowClient } from '../../utils/webflow/client';
 import { fetchAllPages } from '../../utils/webflow/pages';
-import type { WebflowPage } from '../../utils/webflow-types';
+// import type { WebflowPage } from '../../types'; // Uncomment if you need the type
 
 // Get pages
-const siteId = import.meta.env.PUBLIC_WEBFLOW_SITE_ID;
+const siteId = (Astro.locals as any).runtime.env.WEBFLOW_SITE_ID;
 if (!siteId) {
-  throw new Error('PUBLIC_WEBFLOW_SITE_ID is not defined');
+  throw new Error('WEBFLOW_SITE_ID is not defined');
 }
 
-const pages = await fetchAllPages(siteId);
+const webflowToken = (Astro.locals as any).runtime.env.WEBFLOW_API_TOKEN;
+if (!webflowToken) {
+  throw new Error('WEBFLOW_API_TOKEN is not defined');
+}
+
+const client = createWebflowClient(webflowToken);
+const pages = await fetchAllPages(client, siteId);
 
 // Get existing settings
-const settings = await Astro.locals.exposureSettings.get('settings');
+const settings = await (Astro.locals as any).exposureSettings.get('settings');
 const initialSettings = settings ? JSON.parse(settings).pages : null;
 ---
 

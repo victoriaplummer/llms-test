@@ -81,6 +81,7 @@ const basePath = import.meta.env.BASE_URL;
 			const step = STEPS[currentStepIndex];
 			progressBar.style.width = `${step.progress}%`;
 			progressStep.textContent = step.message;
+			console.log("Updating progress", currentStepIndex, step.message);
 		}
 	}
 
@@ -88,6 +89,7 @@ const basePath = import.meta.env.BASE_URL;
 		const progressContainer = document.getElementById('progressContainer');
 		if (!progressContainer) return;
 		progressContainer.classList.remove('hidden');
+		console.log("Showing progress bar");
 	}
 
 	function stopProgress(success: boolean) {
@@ -103,10 +105,12 @@ const basePath = import.meta.env.BASE_URL;
 			setTimeout(() => {
 				progressContainer.classList.add('hidden');
 				progressBar.style.width = '0%';
+				console.log("Hiding progress bar (success)");
 			}, 1000);
 		} else {
 			progressContainer.classList.add('hidden');
 			progressBar.style.width = '0%';
+			console.log("Hiding progress bar (error)");
 		}
 	}
 
@@ -118,10 +122,8 @@ const basePath = import.meta.env.BASE_URL;
 			button.disabled = true;
 			button.textContent = 'Regenerating...';
 			
-			// Initialize progress bar
-			const progressContainer = document.getElementById('progressContainer');
-			if (!progressContainer) return;
-			progressContainer.classList.remove('hidden');
+			// Always use startProgress helper
+			startProgress();
 			
 			// Start with initial step
 			currentStepIndex = 0;

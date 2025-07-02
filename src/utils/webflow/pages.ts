@@ -2,8 +2,8 @@ import type {
   WebflowPage,
   WebflowNode,
   WebflowPageContentResponse,
-} from "../webflow-types";
-import { webflow, withRateLimit, delay } from "./client";
+} from "../../types";
+import { withRateLimit, delay } from "./client";
 
 interface CachedData {
   data: any;
@@ -27,11 +27,13 @@ function isValidCache(data: any): data is CachedData {
 
 /**
  * Fetches all published pages from Webflow using pagination
+ * @param webflowClient - The Webflow client
  * @param siteId - The Webflow site ID
  * @param pageSize - Number of items per page (default: 100, max: 100)
  * @returns Promise resolving to array of all published pages
  */
 export const fetchAllPages = async (
+  webflowClient: any, // Use correct type if available
   siteId: string,
   pageSize = 100
 ): Promise<WebflowPage[]> => {
@@ -45,12 +47,13 @@ export const fetchAllPages = async (
       await delay(500);
     }
 
-    const response = await withRateLimit(() =>
-      webflow.pages.list(siteId, {
+    // Type assertion for response
+    const response = (await withRateLimit(() =>
+      webflowClient.pages.list(siteId, {
         limit: pageSize,
         offset: offset,
       })
-    );
+    )) as { pages?: any[]; pagination?: { total?: number; limit?: number } };
 
     if (!response?.pages?.length) {
       break;
@@ -58,9 +61,9 @@ export const fetchAllPages = async (
 
     // Convert API response to our WebflowPage type and filter out draft/archived pages
     const publishedPages = response.pages
-      .filter((page) => page && typeof page === "object")
+      .filter((page: any) => page && typeof page === "object")
       .map(
-        (page) =>
+        (page: any) =>
           ({
             id: page.id || "",
             siteId: page.siteId || siteId,
@@ -88,7 +91,7 @@ export const fetchAllPages = async (
           } as WebflowPage)
       )
       .filter(
-        (page) =>
+        (page: WebflowPage) =>
           // Filter out draft, archived, and template pages
           !page.draft && !page.archived && !page.slug.startsWith("detail_") // Exclude template pages
       );
@@ -109,10 +112,11 @@ export const fetchAllPages = async (
  * Gets page content from cache or fetches it
  */
 export const fetchAllPageContent = async (
-  pageId: string,
-  locals?: { webflowContent: App.Locals["webflowContent"] }
+  webflowClient: any, // Use correct type if available
+  webflowContent: any, // KV namespace
+  pageId: string
 ): Promise<WebflowNode[]> => {
-  if (!locals?.webflowContent) {
+  if (!webflowContent) {
     throw new Error("KV storage required for page content caching");
   }
 
@@ -120,7 +124,7 @@ export const fetchAllPageContent = async (
 
   try {
     // Try to get from cache first
-    const cached = await locals.webflowContent.get(cacheKey);
+    const cached = await webflowContent.get(cacheKey);
     if (cached) {
       const parsedCache = JSON.parse(cached);
       if (isValidCache(parsedCache)) {
@@ -140,7 +144,7 @@ export const fetchAllPageContent = async (
       }
 
       const response = (await withRateLimit(() =>
-        webflow.pages.getContent(pageId, {
+        webflowClient.pages.getContent(pageId, {
           limit: 100,
           offset: offset,
         })
@@ -163,7 +167,7 @@ export const fetchAllPageContent = async (
       data: allNodes,
       timestamp: Date.now(),
     };
-    await locals.webflowContent.put(cacheKey, JSON.stringify(cacheData));
+    await webflowContent.put(cacheKey, JSON.stringify(cacheData));
 
     return allNodes;
   } catch (error) {

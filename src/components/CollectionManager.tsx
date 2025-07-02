@@ -9,7 +9,7 @@ import type {
   WebflowCollection,
   WebflowCollectionField,
   WebflowCollectionSchema,
-} from "../utils/webflow-types";
+} from "../types";
 
 /**
  * Props for the CollectionManager component
@@ -86,23 +86,33 @@ export default function CollectionManager({
     return initializedSettings;
   });
 
+  // State for the currently selected collection (for modal)
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
     null
   );
+  // State for the schema of the selected collection
   const [collectionSchema, setCollectionSchema] =
     useState<WebflowCollectionSchema | null>(null);
+  // Modal open/close state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Search term for filtering fields in modal
   const [searchTerm, setSearchTerm] = useState("");
+  // Saving state for async save actions
   const [isSaving, setIsSaving] = useState(false);
+  // Loading state for async schema fetch
   const [isLoading, setIsLoading] = useState(false);
+  // Error state for displaying errors to the user
   const [error, setError] = useState<string | null>(null);
+  // State for tracking regeneration (not used in this snippet)
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
 
+  // Log when component mounts or collections prop changes
   useEffect(() => {
     console.log("Component mounted or collections changed:", collections);
   }, [collections]);
 
+  // Fetch the schema for the selected collection when it changes
   useEffect(() => {
     async function loadCollectionSchema() {
       if (!selectedCollection) return;
@@ -112,6 +122,7 @@ export default function CollectionManager({
 
       try {
         console.log("Fetching schema for collection:", selectedCollection);
+        // Fetch schema from API route
         const response = await fetch(
           `/api/admin/get-collection-schema?id=${selectedCollection}`
         );
@@ -167,9 +178,14 @@ export default function CollectionManager({
     loadCollectionSchema();
   }, [selectedCollection]);
 
+  // Register a custom event for external save triggers (e.g., from Astro page)
   useEffect(() => {
     const event = new CustomEvent("collection-manager-mounted", {
       detail: {
+        /**
+         * Save handler for external triggers
+         * @returns {Promise<{success: boolean, error?: string}>}
+         */
         handleSave: async () => {
           setIsSaving(true);
           setError(null);
@@ -210,6 +226,10 @@ export default function CollectionManager({
     window.dispatchEvent(event);
   }, [settings]);
 
+  /**
+   * Handler for clicking a collection card. Opens the modal and sets the selected collection.
+   * @param collectionId - The ID of the collection to configure
+   */
   const handleCollectionClick = (collectionId: string) => {
     console.log("Collection clicked:", collectionId);
     console.log("Current state before click:", {
@@ -227,6 +247,10 @@ export default function CollectionManager({
     console.log("State updates triggered");
   };
 
+  /**
+   * Toggle the inclusion of a field for the selected collection
+   * @param fieldId - The ID of the field to toggle
+   */
   const handleFieldToggle = (fieldId: string) => {
     if (!selectedCollection) return;
     console.log("Toggling field:", fieldId);
@@ -254,6 +278,11 @@ export default function CollectionManager({
     });
   };
 
+  /**
+   * Update the description for a field in the selected collection
+   * @param fieldId - The ID of the field
+   * @param description - The new description
+   */
   const handleFieldDescriptionChange = (
     fieldId: string,
     description: string
@@ -277,6 +306,11 @@ export default function CollectionManager({
     }));
   };
 
+  /**
+   * Update the display name for a field in the selected collection
+   * @param fieldId - The ID of the field
+   * @param displayName - The new display name
+   */
   const handleFieldDisplayNameChange = (
     fieldId: string,
     displayName: string
@@ -300,6 +334,9 @@ export default function CollectionManager({
     }));
   };
 
+  /**
+   * Save handler for the modal's Save button
+   */
   const handleSave = async () => {
     try {
       setIsSaving(true);
@@ -326,6 +363,10 @@ export default function CollectionManager({
     }
   };
 
+  /**
+   * Toggle the visibility of a collection in the main list
+   * @param collectionId - The ID of the collection
+   */
   const handleCollectionVisibilityToggle = (collectionId: string) => {
     setSettings((prev) => ({
       collections: {
@@ -338,6 +379,7 @@ export default function CollectionManager({
     }));
   };
 
+  // Filter fields in the modal based on the search term
   const filteredFields = collectionSchema?.fields.filter(
     (field) =>
       field.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||

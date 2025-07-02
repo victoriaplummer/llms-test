@@ -1,5 +1,5 @@
 // Re-export the client
-export { webflow, delay, withRateLimit } from "./client";
+export { delay, withRateLimit } from "./client";
 
 // Re-export collections functionality
 export {

@@ -9,7 +9,7 @@ export const config = {
  */
 
 import type { APIRoute } from "astro";
-import type { ExposureConfig } from "../../../utils/webflow-types";
+import type { ExposureConfig } from "../../../types";
 
 /**
  * POST handler for saving exposure settings
@@ -54,40 +54,34 @@ import type { ExposureConfig } from "../../../utils/webflow-types";
  * @throws {500} Internal server error
  */
 export const POST: APIRoute = async ({ request, locals }) => {
-  const runtime = locals.runtime;
-
   try {
-    const settings = (await request.json()) as ExposureConfig;
-
-    // Validate settings structure
-    if (!settings || typeof settings !== "object" || !settings.collections) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Invalid settings format",
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
-    // Save settings to KV
-    await locals.exposureSettings.put("settings", JSON.stringify(settings));
-
+    const body = await request.json();
+    const newCollections =
+      body &&
+      typeof body === "object" &&
+      "collections" in body &&
+      typeof body.collections === "object"
+        ? body.collections
+        : body;
+    // Load existing settings
+    const existingSettings = await (locals as any).exposureSettings.get(
+      "settings"
+    );
+    const settings = existingSettings
+      ? JSON.parse(existingSettings)
+      : { collections: {}, pages: {} };
+    // Update collections only
+    settings.collections = newCollections;
+    // Save merged settings
+    await (locals as any).exposureSettings.put(
+      "settings",
+      JSON.stringify(settings)
+    );
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Settings saved successfully",
-      }),
+      JSON.stringify({ success: true, message: "Settings saved successfully" }),
       {
         status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       }
     );
   } catch (error) {

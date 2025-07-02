@@ -1,9 +1,8 @@
 import { WebflowClient } from "webflow-api";
 
-// Initialize single webflow client instance
-const webflowClient = new WebflowClient({
-  accessToken: import.meta.env.WEBFLOW_SITE_API_TOKEN,
-});
+export function createWebflowClient(accessToken: string) {
+  return new WebflowClient({ accessToken });
+}
 
 // Track rate limit state
 const rateLimitState = {
@@ -111,5 +110,22 @@ export const withRateLimit = async <T>(
   }
 };
 
-// Re-export the client instance
-export const webflow = webflowClient;
+export const fetchAllPages = async (
+  webflowClient: any, // Use correct type if available
+  siteId: string
+): Promise<any[]> => {
+  let allPages: any[] = [];
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await webflowClient.pages.list(siteId, { offset });
+    if (!response.pages || response.pages.length === 0) break;
+    allPages = allPages.concat(response.pages);
+    offset += response.pages.length;
+    hasMore =
+      response.pages.length > 0 && (response.pagination?.total ?? 0) > offset;
+  }
+
+  return allPages;
+};
