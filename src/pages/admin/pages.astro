@@ -5,8 +5,10 @@ import { webflow } from '../../utils/webflow/client';
 import { fetchAllPages } from '../../utils/webflow/pages';
 import type { WebflowPage } from '../../utils/webflow-types';
 
+const runtime = Astro.locals.runtime;
+
 // Get pages
-const siteId = import.meta.env.WEBFLOW_SITE_ID;
+const siteId = runtime?.env.WEBFLOW_SITE_ID;
 if (!siteId) {
   throw new Error('WEBFLOW_SITE_ID is not defined');
 }

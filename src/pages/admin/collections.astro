@@ -3,8 +3,10 @@ import Layout from '../../layouts/Layout.astro';
 import CollectionManager from '../../components/CollectionManager';
 import { fetchCollections } from '../../utils/webflow-client';
 
+const runtime = Astro.locals.runtime;
+
 // Get all collections
-const siteId = import.meta.env.WEBFLOW_SITE_ID;
+const siteId = runtime?.env.WEBFLOW_SITE_ID;
 if (!siteId) {
   throw new Error("WEBFLOW_SITE_ID is not defined");
 }

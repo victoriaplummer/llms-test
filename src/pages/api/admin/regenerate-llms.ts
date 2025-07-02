@@ -35,7 +35,7 @@ const sendProgress = (
  */
 const createInitialContent = async (locals: App.Locals) => {
   // Get site info
-  const siteId = import.meta.env.WEBFLOW_SITE_ID;
+  const siteId = runtime?.env.WEBFLOW_SITE_ID;
   const sites = await webflow.sites.list();
   const site = sites?.sites?.find((s) => s.id === siteId);
 

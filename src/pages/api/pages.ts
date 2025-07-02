@@ -21,7 +21,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
     // Log environment variables (excluding sensitive data)
     console.log(
       "Attempting to fetch sites with Site ID:",
-      import.meta.env.WEBFLOW_SITE_ID
+      runtime?.env.WEBFLOW_SITE_ID
     );
 
     // Get Sites - with rate limit handling
@@ -30,15 +30,15 @@ export const GET: APIRoute = async ({ url, locals }) => {
 
     // Get Site
     const site = sites?.sites?.find(
-      (site) => site.id === import.meta.env.WEBFLOW_SITE_ID
+      (site) => site.id === runtime?.env.WEBFLOW_SITE_ID
     );
 
     if (!site) {
-      console.error("Site not found with ID:", import.meta.env.WEBFLOW_SITE_ID);
+      console.error("Site not found with ID:", runtime?.env.WEBFLOW_SITE_ID);
       return new Response(
         JSON.stringify({
           error: "Site not found",
-          siteId: import.meta.env.WEBFLOW_SITE_ID,
+          siteId: runtime?.env.WEBFLOW_SITE_ID,
         }),
         {
           status: 404,
