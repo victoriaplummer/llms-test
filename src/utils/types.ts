@@ -26,9 +26,14 @@ export interface MinimalKV {
 }
 
 // Extend the global namespace to include our runtime types
+// Used for Astro's context.locals augmentation
 declare global {
   interface Env {
     WEBFLOW_CONTENT: KVNamespace;
     EXPOSURE_SETTINGS: KVNamespace;
+  }
+  interface Locals {
+    webflowContent: MinimalKV;
+    exposureSettings: MinimalKV;
   }
 }

@@ -9,9 +9,6 @@ import tailwind from "@astrojs/tailwind";
 // https://astro.build/config
 export default defineConfig({
   base: "/llmstxt",
-  site: "https://vics-amazing-closet.webflow.io",
-  trailingSlash: "ignore",
-  prefetch: true,
   output: "server",
   markdown: {
     syntaxHighlight: "prism",
@@ -19,10 +16,10 @@ export default defineConfig({
     rehypePlugins: [],
   },
   adapter: cloudflare({
-    mode: "advanced",
+    platformProxy: {
+      enabled: true,
+    },
     runtime: {
-      mode: "local",
-      type: "pages",
       bindings: {
         // This name must match the KV namespace name in wrangler.toml
         WEBFLOW_CONTENT: {
