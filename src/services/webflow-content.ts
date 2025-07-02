@@ -204,9 +204,9 @@ const isNavigationOrFooterComponent = async (
  */
 export const processWebflowPage = async (
   pageId: string,
-  locals: { webflowContent: App.Locals["webflowContent"] }
+  locals: App.Locals
 ): Promise<ProcessedPage> => {
-  const siteId = import.meta.env.WEBFLOW_SITE_ID;
+  const siteId = locals.runtime.env.WEBFLOW_SITE_ID;
   if (!siteId) {
     throw new Error("WEBFLOW_SITE_ID is not defined");
   }
@@ -249,7 +249,7 @@ export const processWebflowPage = async (
   ].join("\n");
 
   // Store with both URLs
-  const basePath = import.meta.env.BASE_URL;
+  const basePath = locals.runtime.env.BASE_URL;
   const baseKey = `docs/${slug}`;
   await locals.webflowContent.put(baseKey, markdownContent);
   await locals.webflowContent.put(`${baseKey}.md`, markdownContent);

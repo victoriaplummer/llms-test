@@ -120,7 +120,7 @@ function wrapKVNamespace(kv: KVNamespace): MinimalKV {
 export const onRequest: MiddlewareHandler = defineMiddleware(
   async (context, next) => {
     // Initialize components and assets cache if not already done
-    const siteId = import.meta.env.WEBFLOW_SITE_ID;
+    const siteId = context.locals.runtime?.env.WEBFLOW_SITE_ID;
     if (siteId) {
       try {
         // Initialize components cache (now includes component content cache)

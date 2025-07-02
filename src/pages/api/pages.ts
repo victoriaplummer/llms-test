@@ -133,7 +133,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
           page.seo?.description ||
           page.openGraph?.description ||
           "";
-        const basePath = import.meta.env.BASE_URL;
+        const basePath = locals?.runtime?.env?.BASE_URL;
         const pageEntry = `- [${title}](${basePath}/docs/${
           processedPage.fileName
         })${description ? ": " + description : ""}`;

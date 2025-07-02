@@ -1,7 +1,7 @@
 ---
 import Toast from './Toast.astro';
 
-const basePath = import.meta.env.BASE_URL;
+const basePath = Astro.locals.runtime.env.BASE_URL;
 ---
 
 <div id="progressContainer" class="progress-container hidden">

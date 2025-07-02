@@ -221,7 +221,7 @@ export const GET: APIRoute = async ({ locals }) => {
 
   try {
     console.log("Starting collections endpoint");
-    const siteId = import.meta.env.WEBFLOW_SITE_ID;
+    const siteId = runtime?.env.WEBFLOW_SITE_ID;
     if (!siteId) {
       throw new Error("WEBFLOW_SITE_ID is not defined");
     }
@@ -312,7 +312,7 @@ export const GET: APIRoute = async ({ locals }) => {
         const items = await fetchAllCollectionItems(collection._id);
         console.log(`Found ${items.length} items`);
 
-        const basePath = import.meta.env.BASE_URL;
+        const basePath = locals.runtime.env.BASE_URL;
 
         // Add collection to llms.txt content with formatted URL
         collectionsContent.push(

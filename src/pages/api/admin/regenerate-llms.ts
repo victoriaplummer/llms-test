@@ -12,8 +12,6 @@ import {
   isCollectionExposed,
 } from "../../../utils/collection-exposure";
 
-const basePath = import.meta.env.BASE_URL;
-
 interface ErrorResponse {
   error: string;
   message?: string;
@@ -56,7 +54,7 @@ const createInitialContent = async (locals: App.Locals) => {
 };
 
 export const POST: APIRoute = async ({ locals, request }) => {
-  const runtime = locals.runtime;
+  const basePath = locals.runtime.env.BASE_URL;
 
   try {
     // Load exposure settings first

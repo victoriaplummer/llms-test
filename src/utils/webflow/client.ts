@@ -1,9 +1,9 @@
 import { WebflowClient } from "webflow-api";
 
 // Initialize single webflow client instance
-const webflowClient = new WebflowClient({
-  accessToken: import.meta.env.WEBFLOW_SITE_API_TOKEN,
-});
+export function createWebflowClient(accessToken: string) {
+  return new WebflowClient({ accessToken });
+}
 
 // Track rate limit state
 const rateLimitState = {
@@ -112,4 +112,6 @@ export const withRateLimit = async <T>(
 };
 
 // Re-export the client instance
-export const webflow = webflowClient;
+export const webflow = createWebflowClient(
+  import.meta.env.WEBFLOW_SITE_API_TOKEN
+);
