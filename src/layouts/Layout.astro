@@ -7,6 +7,11 @@ interface Props {
 
 const { title } = Astro.props;
 const basePath = Astro.locals.runtime.env.BASE_URL;
+console.log("Astro.locals", JSON.stringify(Astro.locals, null, 2));
+console.log("Astro.locals.runtime", JSON.stringify(Astro.locals.runtime, null, 2));
+console.log("Astro.locals.runtime.env", JSON.stringify(Astro.locals.runtime.env, null, 2));
+console.log("BASE_URL", JSON.stringify(Astro.locals.runtime.env.BASE_URL, null, 2));
+
 ---
 
 <!doctype html>
