@@ -19,7 +19,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
   const webflowClient = createWebflowClient(accessToken);
   const webflowContent = (locals as any).webflowContent;
   const exposureSettings = (locals as any).exposureSettings;
-  const basePath = (locals as any).runtime.env.BASE_URL;
+  const basePath = import.meta.env.BASE_URL;
 
   try {
     // Get Sites

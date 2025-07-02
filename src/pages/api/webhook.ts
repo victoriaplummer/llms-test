@@ -52,7 +52,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         pagesProcessed: pagesResult.pagesProcessed || 0,
         collectionsProcessed:
           collectionsResult.message || "Collections updated",
-        llmstxt: `${env.BASE_URL}/llms.txt`, // Use env.BASE_URL from runtime
+        llmstxt: `${import.meta.env.BASE_URL}/llms.txt`, // Use env.BASE_URL from runtime
       }),
       {
         status: 200,

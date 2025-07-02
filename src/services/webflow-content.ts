@@ -218,7 +218,7 @@ export const processWebflowPage = async (
   const accessToken = (locals as any).runtime.env.WEBFLOW_SITE_API_TOKEN;
   const webflowClient = createWebflowClient(accessToken);
   const webflowContent = (locals as any).webflowContent;
-  const basePath = (locals as any).runtime.env.BASE_URL;
+  const basePath = import.meta.env.BASE_URL;
 
   if (!siteId) throw new Error("WEBFLOW_SITE_ID is not defined");
   if (!accessToken) throw new Error("WEBFLOW_SITE_API_TOKEN is not defined");

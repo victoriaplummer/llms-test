@@ -218,6 +218,7 @@ function formatCollectionUrl(name: string): string {
 }
 
 export const GET: APIRoute = async ({ locals }) => {
+  const basePath = import.meta.env.BASE_URL;
   const siteId = (locals as any).runtime.env.WEBFLOW_SITE_ID;
   const accessToken = (locals as any).runtime.env.WEBFLOW_SITE_API_TOKEN;
   if (!siteId) throw new Error("WEBFLOW_SITE_ID is not defined");
@@ -327,7 +328,7 @@ export const GET: APIRoute = async ({ locals }) => {
         collectionsContent.push(
           `- [${
             config.displayName || collection.displayName
-          }](<BASE_URL>/collections/${collectionUrl}.md): ${
+          }](${basePath}/collections/${collectionUrl}.md): ${
             config.description || `Collection with ${items.length} items`
           }`
         );
