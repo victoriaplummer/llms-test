@@ -120,7 +120,7 @@ function wrapKVNamespace(kv: KVNamespace): MinimalKV {
 export const onRequest: MiddlewareHandler = defineMiddleware(
   async (context, next) => {
     // Initialize components and assets cache if not already done
-    const siteId = import.meta.env.PUBLIC_WEBFLOW_SITE_ID;
+    const siteId = import.meta.env.WEBFLOW_SITE_ID;
     if (siteId) {
       try {
         // Initialize components cache (now includes component content cache)
@@ -152,7 +152,7 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
           runtimeEnv: runtime?.env ? Object.keys(runtime.env) : [],
           contextLocals: Object.keys(context.locals),
           envVars: {
-            hasWebflowSiteId: !!import.meta.env.PUBLIC_WEBFLOW_SITE_ID,
+            hasWebflowSiteId: !!import.meta.env.WEBFLOW_SITE_ID,
             hasBaseUrl: !!import.meta.env.BASE_URL,
           },
         });

@@ -37,8 +37,8 @@ npm install
    Create a `.env` file with the following variables:
 
 ```env
-PUBLIC_WEBFLOW_SITE_API_TOKEN=your_webflow_api_token
-PUBLIC_WEBFLOW_SITE_ID=your_webflow_site_id
+WEBFLOW_SITE_API_TOKEN=your_webflow_api_token
+WEBFLOW_SITE_ID=your_webflow_site_id
 ```
 
 4. Start the development server:

@@ -6,9 +6,9 @@ import { fetchAllPages } from '../../utils/webflow/pages';
 import type { WebflowPage } from '../../utils/webflow-types';
 
 // Get pages
-const siteId = import.meta.env.PUBLIC_WEBFLOW_SITE_ID;
+const siteId = import.meta.env.WEBFLOW_SITE_ID;
 if (!siteId) {
-  throw new Error('PUBLIC_WEBFLOW_SITE_ID is not defined');
+  throw new Error('WEBFLOW_SITE_ID is not defined');
 }
 
 const pages = await fetchAllPages(siteId);

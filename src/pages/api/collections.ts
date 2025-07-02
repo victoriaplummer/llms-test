@@ -221,9 +221,9 @@ export const GET: APIRoute = async ({ locals }) => {
 
   try {
     console.log("Starting collections endpoint");
-    const siteId = import.meta.env.PUBLIC_WEBFLOW_SITE_ID;
+    const siteId = import.meta.env.WEBFLOW_SITE_ID;
     if (!siteId) {
-      throw new Error("PUBLIC_WEBFLOW_SITE_ID is not defined");
+      throw new Error("WEBFLOW_SITE_ID is not defined");
     }
 
     // Load exposure settings from KV

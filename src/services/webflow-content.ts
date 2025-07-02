@@ -206,9 +206,9 @@ export const processWebflowPage = async (
   pageId: string,
   locals: { webflowContent: App.Locals["webflowContent"] }
 ): Promise<ProcessedPage> => {
-  const siteId = import.meta.env.PUBLIC_WEBFLOW_SITE_ID;
+  const siteId = import.meta.env.WEBFLOW_SITE_ID;
   if (!siteId) {
-    throw new Error("PUBLIC_WEBFLOW_SITE_ID is not defined");
+    throw new Error("WEBFLOW_SITE_ID is not defined");
   }
 
   // Get components list from cache - should be initialized at startup
@@ -392,9 +392,9 @@ const cleanContent = async (
             }
 
             // Get component content from cache
-            const siteId = import.meta.env.PUBLIC_WEBFLOW_SITE_ID;
+            const siteId = import.meta.env.WEBFLOW_SITE_ID;
             if (!siteId) {
-              throw new Error("PUBLIC_WEBFLOW_SITE_ID is not defined");
+              throw new Error("WEBFLOW_SITE_ID is not defined");
             }
 
             // Use the cached component content
