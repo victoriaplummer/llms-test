@@ -155,6 +155,12 @@ export const onRequest: MiddlewareHandler = defineMiddleware(
             hasWebflowSiteId: !!import.meta.env.WEBFLOW_SITE_ID,
             hasBaseUrl: !!import.meta.env.BASE_URL,
           },
+          runtimeEnvVars: runtime?.env
+            ? {
+                hasWebflowSiteId: !!runtime.env.WEBFLOW_SITE_ID,
+                hasBaseUrl: !!runtime.env.BASE_URL,
+              }
+            : undefined,
         });
 
         // Try different ways to access KV bindings
