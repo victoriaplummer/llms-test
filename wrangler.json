@@ -11,14 +11,6 @@
   "observability": {
     "enabled": true
   },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "demo",
-      "database_id": "0",
-      "migrations_dir": "drizzle"
-    }
-  ],
   "kv_namespaces": [
     {
       "binding": "WEBFLOW_CONTENT",
