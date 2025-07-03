@@ -10,6 +10,9 @@ import tailwind from "@astrojs/tailwind";
 export default defineConfig({
   base: "/llmstxt",
   output: "server",
+  build: {
+    assetsPrefix: "/llmstxt",
+  },
   markdown: {
     syntaxHighlight: "prism",
     remarkPlugins: [],
