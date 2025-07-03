@@ -9,6 +9,8 @@ const devExposureSettings = new MockKVNamespace();
 
 export const onRequest: MiddlewareHandler = defineMiddleware(
   async (context, next) => {
+    console.log("context locals", context.locals);
+
     // Log asset requests in production
     if (import.meta.env.PROD) {
       const url = context.request.url;
