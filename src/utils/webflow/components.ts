@@ -120,15 +120,16 @@ export const fetchComponents = async (
   siteId: string,
   locals?: LocalsWithKV
 ) => {
-  console.log("[Components] Debug Info:", {
-    siteId,
-    hasLocals: !!locals,
-    hasWebflowContent: !!locals?.webflowContent,
-    webflowContentType: locals?.webflowContent
-      ? typeof locals.webflowContent
-      : "undefined",
-    hasMemoryCache: !!componentsCache[siteId],
-  });
+  if (import.meta.env.DEV)
+    console.log("[Components] Debug Info:", {
+      siteId,
+      hasLocals: !!locals,
+      hasWebflowContent: !!locals?.webflowContent,
+      webflowContentType: locals?.webflowContent
+        ? typeof locals.webflowContent
+        : "undefined",
+      hasMemoryCache: !!componentsCache[siteId],
+    });
 
   // Check memory cache first
   if (componentsCache[siteId]) {

@@ -3,16 +3,17 @@ import type { APIRoute } from "astro";
 export const GET: APIRoute = async ({ locals, url }) => {
   try {
     // Log the incoming request URL for debugging
-    console.log("Incoming request URL:", url.toString());
+    if (import.meta.env.DEV)
+      console.log("Incoming request URL:", url.toString());
 
     // Get llms.txt content from KV (Cloudflare Worker env)
     const content = await (locals as any).webflowContent.get("llms.txt");
 
     // Log the content we got
-    console.log("Retrieved content:", content);
+    if (import.meta.env.DEV) console.log("Retrieved content:", content);
 
     if (!content) {
-      console.log("No content found in KV store");
+      if (import.meta.env.DEV) console.log("No content found in KV store");
       return new Response(
         "Content has not been generated yet. Please:\n\n" +
           "1. Visit the admin interface at /\n" +

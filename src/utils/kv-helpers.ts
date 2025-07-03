@@ -15,30 +15,33 @@ export const getKVContent = async (
   try {
     // Use KV from Cloudflare Worker env
     const kv = (context.locals as any).runtime.env.WEBFLOW_CONTENT;
-    console.log("[KV Debug] Attempting to get content:", {
-      key,
-      hasContext: !!context,
-      hasLocals: !!context?.locals,
-      hasWebflowContent: !!kv,
-      webflowContentType: kv ? typeof kv : "undefined",
-      webflowContentMethods: kv ? Object.keys(kv) : [],
-    });
+    if (import.meta.env.DEV)
+      console.log("[KV Debug] Attempting to get content:", {
+        key,
+        hasContext: !!context,
+        hasLocals: !!context?.locals,
+        hasWebflowContent: !!kv,
+        webflowContentType: kv ? typeof kv : "undefined",
+        webflowContentMethods: kv ? Object.keys(kv) : [],
+      });
 
     const content = await kv.get(key);
 
-    console.log("[KV Debug] Get result:", {
-      key,
-      hasContent: !!content,
-      contentType: typeof content,
-    });
+    if (import.meta.env.DEV)
+      console.log("[KV Debug] Get result:", {
+        key,
+        hasContent: !!content,
+        contentType: typeof content,
+      });
 
     return content ?? defaultValue;
   } catch (error) {
-    console.error("[KV Debug] Error getting content:", {
-      key,
-      error: error instanceof Error ? error.message : String(error),
-      errorStack: error instanceof Error ? error.stack : undefined,
-    });
+    if (import.meta.env.DEV)
+      console.error("[KV Debug] Error getting content:", {
+        key,
+        error: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+      });
     return defaultValue;
   }
 };

@@ -81,7 +81,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
                 error instanceof TypeError &&
                 error.message.includes("Controller is closed")
               ) {
-                console.debug("Progress update skipped - controller closed");
+                if (import.meta.env.DEV)
+                  console.debug("Progress update skipped - controller closed");
               } else {
                 console.warn(`Progress callback error: ${error}`);
               }

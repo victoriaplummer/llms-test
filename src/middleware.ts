@@ -9,6 +9,16 @@ const devExposureSettings = new MockKVNamespace();
 
 export const onRequest: MiddlewareHandler = defineMiddleware(
   async (context, next) => {
+    // Log asset requests in production
+    if (import.meta.env.PROD) {
+      const url = context.request.url;
+      if (
+        url.includes("/_astro/") ||
+        url.match(/\.(css|js|svg|png|jpg|jpeg|woff2?)($|\?)/)
+      ) {
+        console.log("[PROD ASSET REQUEST]", url);
+      }
+    }
     if (import.meta.env.DEV) {
       (context.locals as any).webflowContent = (
         context as any

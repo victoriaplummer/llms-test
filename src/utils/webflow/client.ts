@@ -69,7 +69,7 @@ export const withRateLimit = async <T>(
     // Wait for appropriate delay before making request
     const delayMs = calculateDelay();
     if (delayMs > 0) {
-      console.debug(`Rate limit delay: ${delayMs}ms`);
+      if (import.meta.env.DEV) console.debug(`Rate limit delay: ${delayMs}ms`);
       await delay(delayMs);
     }
 

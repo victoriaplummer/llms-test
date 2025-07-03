@@ -317,7 +317,8 @@ const cleanContent = async (
         case "image":
           const assetId = node.image?.assetId;
           if (!assetId) {
-            console.debug("Skipping image without assetId");
+            if (import.meta.env.DEV)
+              console.debug("Skipping image without assetId");
             break;
           }
 
@@ -369,7 +370,8 @@ const cleanContent = async (
         // Component Instance Node
         case "component-instance":
           if (!node.componentId) {
-            console.debug("Skipping component without ID");
+            if (import.meta.env.DEV)
+              console.debug("Skipping component without ID");
             return "";
           }
 
@@ -380,9 +382,10 @@ const cleanContent = async (
             );
 
             if (!componentInfo) {
-              console.debug(
-                `Component ${node.componentId} not found in components list, skipping`
-              );
+              if (import.meta.env.DEV)
+                console.debug(
+                  `Component ${node.componentId} not found in components list, skipping`
+                );
               return "";
             }
 
@@ -401,9 +404,10 @@ const cleanContent = async (
               "menubar",
             ];
             if (navPatterns.some((pattern) => name.includes(pattern))) {
-              console.debug(
-                `Skipping navigation component ${node.componentId} based on name: ${name}`
-              );
+              if (import.meta.env.DEV)
+                console.debug(
+                  `Skipping navigation component ${node.componentId} based on name: ${name}`
+                );
               return "";
             }
 
@@ -421,9 +425,10 @@ const cleanContent = async (
             );
 
             if (!componentNodes?.length) {
-              console.debug(
-                `No content found for component ${node.componentId}`
-              );
+              if (import.meta.env.DEV)
+                console.debug(
+                  `No content found for component ${node.componentId}`
+                );
               return "";
             }
 
