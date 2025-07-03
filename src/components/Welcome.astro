@@ -222,7 +222,7 @@ const basePath = import.meta.env.BASE_URL;
 	#container {
 		font-family: Inter, system-ui, -apple-system, sans-serif;
 		min-height: 100vh;
-		@apply bg-base-200;
+		background-color: oklch(var(--b2) / var(--tw-bg-opacity));
 		padding: 2rem;
 	}
 
@@ -239,13 +239,14 @@ const basePath = import.meta.env.BASE_URL;
 	h1 {
 		font-size: 2.5rem;
 		font-weight: 700;
-		@apply text-base-content;
+		color: oklch(var(--bc) / var(--tw-text-opacity));
 		margin-bottom: 1rem;
 	}
 
 	.subtitle {
 		font-size: 1.25rem;
-		@apply text-base-content opacity-70;
+		color: oklch(var(--bc) / var(--tw-text-opacity));
+		opacity: 0.7;
 		margin-bottom: 3rem;
 	}
 
@@ -257,10 +258,10 @@ const basePath = import.meta.env.BASE_URL;
 	}
 
 	.feature-card {
-		@apply bg-base-100;
+		background-color: oklch(var(--b1) / var(--tw-bg-opacity));
 		padding: 2rem;
 		border-radius: 1rem;
-		@apply shadow-lg;
+		box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 		text-align: left;
 		display: flex;
 		flex-direction: column;
@@ -269,12 +270,13 @@ const basePath = import.meta.env.BASE_URL;
 
 	.feature-card h2 {
 		font-size: 1.5rem;
-		@apply text-base-content;
+		color: oklch(var(--bc) / var(--tw-text-opacity));
 		margin-bottom: 1rem;
 	}
 
 	.feature-card p {
-		@apply text-base-content opacity-70;
+		color: oklch(var(--bc) / var(--tw-text-opacity));
+		opacity: 0.7;
 		margin-bottom: 1.5rem;
 		line-height: 1.5;
 		flex-grow: 1;
@@ -290,20 +292,24 @@ const basePath = import.meta.env.BASE_URL;
 		transition: all 0.2s;
 		border: none;
 		cursor: pointer;
-		@apply bg-base-300 text-base-content;
+		background-color: oklch(var(--b3) / var(--tw-bg-opacity));
+		color: oklch(var(--bc) / var(--tw-text-opacity));
 		width: fit-content;
 	}
 
 	.button:hover {
-		@apply bg-base-300 opacity-80;
+		background-color: oklch(var(--b3) / var(--tw-bg-opacity));
+		opacity: 0.8;
 	}
 
 	.button.primary {
-		@apply bg-primary text-primary-content;
+		background-color: oklch(var(--p) / var(--tw-bg-opacity));
+		color: oklch(var(--pc) / var(--tw-text-opacity));
 	}
 
 	.button.primary:hover {
-		@apply bg-primary opacity-90;
+		background-color: oklch(var(--p) / var(--tw-bg-opacity));
+		opacity: 0.9;
 	}
 
 	.button:disabled {
@@ -329,16 +335,17 @@ const basePath = import.meta.env.BASE_URL;
 	.progress-bar {
 		width: 100%;
 		height: 3px;
-		@apply bg-primary opacity-10;
+		background-color: oklch(var(--p) / var(--tw-bg-opacity));
+		opacity: 0.1;
 		overflow: hidden;
 	}
 
 	.progress-fill {
 		width: 0;
 		height: 100%;
-		@apply bg-primary;
+		background-color: oklch(var(--p) / var(--tw-bg-opacity));
 		transition: width 0.3s ease;
-		@apply shadow-lg;
+		box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 	}
 
 	.progress-step {
@@ -347,10 +354,11 @@ const basePath = import.meta.env.BASE_URL;
 		left: 50%;
 		transform: translateX(-50%);
 		font-size: 0.875rem;
-		@apply text-primary bg-base-100;
+		color: oklch(var(--p) / var(--tw-text-opacity));
+		background-color: oklch(var(--b1) / var(--tw-bg-opacity));
 		padding: 0.25rem 1rem;
 		border-radius: 1rem;
-		@apply shadow-md;
+		box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 	}
 
 	@media (max-width: 768px) {
