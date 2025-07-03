@@ -3,8 +3,7 @@ export const config = {
 };
 
 import type { APIRoute } from "astro";
-import { GET as getPages } from "./pages";
-import { GET as getCollections } from "./collections";
+import { POST as regenerateLlms } from "./admin/regenerate-llms";
 
 interface PagesResponse {
   pagesProcessed: number;
@@ -17,7 +16,7 @@ interface CollectionsResponse {
 
 export const POST: APIRoute = async ({ request, locals }) => {
   // Use env directly from locals
-  const env = (locals as any).runtime.env;
+  // const env = (locals as any).runtime.env;
 
   try {
     console.log("Received webhook from Webflow");
@@ -25,42 +24,24 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const payload = await request.json();
     console.log("Webhook payload:", JSON.stringify(payload, null, 2));
 
-    // Process pages first
-    console.log("Processing pages...");
-    const pagesResponse = await getPages({ url: request.url, locals } as any);
-    if (!pagesResponse.ok) {
-      throw new Error(`Failed to process pages: ${await pagesResponse.text()}`);
-    }
-    const pagesResult = (await pagesResponse.json()) as PagesResponse;
-    console.log("Pages processed:", pagesResult);
+    // Call the regenerate-llms endpoint
+    console.log("Triggering llms.txt regeneration...");
+    const regenerationResponse = await regenerateLlms({
+      locals,
+      request,
+    } as any);
 
-    // Then process collections
-    console.log("Processing collections...");
-    const collectionsResponse = await getCollections({ locals } as any);
-    if (!collectionsResponse.ok) {
+    if (!regenerationResponse.ok) {
       throw new Error(
-        `Failed to process collections: ${await collectionsResponse.text()}`
+        `Failed to regenerate llms.txt: ${await regenerationResponse.text()}`
       );
     }
-    const collectionsResult =
-      (await collectionsResponse.json()) as CollectionsResponse;
-    console.log("Collections processed:", collectionsResult);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        pagesProcessed: pagesResult.pagesProcessed || 0,
-        collectionsProcessed:
-          collectionsResult.message || "Collections updated",
-        llmstxt: `${import.meta.env.BASE_URL}/llms.txt`, // Use env.BASE_URL from runtime
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    // Forward the stream response from regenerateLlms
+    return new Response(regenerationResponse.body, {
+      status: regenerationResponse.status,
+      headers: regenerationResponse.headers,
+    });
   } catch (error) {
     console.error("Webhook Error:", error);
     return new Response(
