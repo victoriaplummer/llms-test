@@ -133,7 +133,7 @@ const basePath = import.meta.env.BASE_URL;
 			const response = await fetch(`${import.meta.env.BASE_URL}/api/admin/regenerate-llms`, {
 				method: 'POST',
 				headers: {
-					'Accept': 'text/event-stream',
+					'Accept': 'application/json',
 				}
 			});
 

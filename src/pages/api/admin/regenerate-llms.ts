@@ -70,118 +70,12 @@ export const OPTIONS: APIRoute = async () => {
   });
 };
 
-export const POST: APIRoute = async ({ locals, request }) => {
-  console.log("regenerate-llms handler called");
-  try {
-    // Load exposure settings first
-    await loadExposureSettings((locals as any).exposureSettings);
-
-    // Create a stream to send progress events
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          console.log("Starting llms.txt regeneration");
-          sendProgress(controller, "Initializing...");
-
-          // Attach progressCallback directly to the existing locals object
-          (locals as any).progressCallback = (step: string) => {
-            try {
-              sendProgress(controller, step);
-            } catch (error) {
-              // Ignore errors from closed controller
-              if (
-                error instanceof TypeError &&
-                error.message.includes("Controller is closed")
-              ) {
-                if (import.meta.env.DEV)
-                  console.debug("Progress update skipped - controller closed");
-              } else {
-                console.warn(`Progress callback error: ${error}`);
-              }
-            }
-          };
-
-          // Create initial content
-          const initialContent = await createInitialContent(locals);
-          await (locals as any).webflowContent.put("llms.txt", initialContent);
-
-          // Call collections endpoint with progress callback
-          console.log("Regenerating collections content...");
-          sendProgress(controller, "Fetching collections...");
-          const collectionsResponse = await getCollections({
-            locals,
-            request,
-            url: new URL(request.url),
-          } as any);
-
-          const collectionsData = (await collectionsResponse.json()) as
-            | ErrorResponse
-            | { collections: any[] };
-          if (!collectionsResponse.ok) {
-            throw new Error(
-              `Collections endpoint failed: ${
-                (collectionsData as ErrorResponse).error ||
-                collectionsResponse.statusText
-              }`
-            );
-          }
-
-          // Call pages endpoint with progress callback
-          console.log("Regenerating pages content...");
-          sendProgress(controller, "Fetching pages...");
-          const pagesResponse = await getPages({
-            locals,
-            request,
-            url: new URL(request.url),
-          } as any);
-
-          const pagesData = (await pagesResponse.json()) as
-            | ErrorResponse
-            | ProcessedPage[];
-          if (!pagesResponse.ok) {
-            throw new Error(
-              `Pages endpoint failed: ${
-                (pagesData as ErrorResponse).error || pagesResponse.statusText
-              }`
-            );
-          }
-
-          // Send completion event and close stream
-          sendProgress(controller, "Finalizing...");
-          controller.close();
-        } catch (error) {
-          console.error("Error in stream:", error);
-          controller.error(error);
-        }
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-        "Access-Control-Allow-Origin": "*", // Or restrict to your frontend's origin
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Accept",
-      },
-    });
-  } catch (error) {
-    console.error("Error regenerating llms.txt:", error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*", // Or restrict to your frontend's origin
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Accept",
-        },
-      }
-    );
-  }
+export const POST: APIRoute = async () => {
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
 };
