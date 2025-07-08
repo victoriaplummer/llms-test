@@ -86,19 +86,10 @@ export default function CollectionManager({
     return initializedSettings;
   });
 
-  // State for all collection schemas
-  const [schemas, setSchemas] = useState<
-    Record<string, WebflowCollectionSchema>
-  >({});
-
   // State for the currently selected collection (for modal)
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
     null
   );
-
-  // State for the schema of the selected collection
-  const [collectionSchema, setCollectionSchema] =
-    useState<WebflowCollectionSchema | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -109,35 +100,6 @@ export default function CollectionManager({
   // Log when component mounts or collections prop changes
   useEffect(() => {
     console.log("Component mounted or collections changed:", collections);
-  }, [collections]);
-
-  // Fetch all schemas on mount or when collections change
-  useEffect(() => {
-    async function loadAllSchemas() {
-      setIsLoading(true);
-      setError(null);
-      const newSchemas: Record<string, WebflowCollectionSchema> = {};
-      try {
-        for (const collection of collections) {
-          const response = await fetch(
-            `/api/admin/get-collection-schema?id=${collection.id}`
-          );
-          if (!response.ok) {
-            throw new Error(
-              `Failed to fetch schema for collection ${collection.id}`
-            );
-          }
-          const schema = (await response.json()) as WebflowCollectionSchema;
-          newSchemas[collection.id] = schema;
-        }
-        setSchemas(newSchemas);
-      } catch (e) {
-        setError("Failed to load collection schemas. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadAllSchemas();
   }, [collections]);
 
   // Register a custom event for external save triggers (e.g., from Astro page)
@@ -202,7 +164,6 @@ export default function CollectionManager({
     });
 
     setSelectedCollection(collectionId);
-    setCollectionSchema(schemas[collectionId] || null);
     setIsModalOpen(true);
     setSearchTerm("");
     setError(null);
@@ -343,12 +304,14 @@ export default function CollectionManager({
   };
 
   // Filter fields in the modal based on the search term
-  const filteredFields = collectionSchema?.fields.filter(
-    (field) =>
-      field.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      field.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      field.type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredFields = collections
+    .find((c) => c.id === selectedCollection)
+    ?.fields.filter(
+      (field) =>
+        field.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        field.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        field.type.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   return (
     <div>
@@ -442,88 +405,112 @@ export default function CollectionManager({
                 <div className="loading loading-spinner loading-lg"></div>
               </div>
             ) : (
-              <>
-                <div className="form-control w-full mb-4">
-                  <input
-                    type="text"
-                    placeholder="Search fields..."
-                    className="input input-bordered w-full"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
-                {collectionSchema && (
-                  <div className="overflow-y-auto max-h-[60vh]">
-                    <table className="table w-full">
-                      <thead>
-                        <tr>
-                          <th>Field</th>
-                          <th>Type</th>
-                          <th>Custom Display Name</th>
-                          <th>Description</th>
-                          <th>Visible</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredFields?.map((field) => (
-                          <tr key={field.id}>
-                            <td className="whitespace-nowrap">
-                              {field.displayName || field.name}
-                            </td>
-                            <td className="whitespace-nowrap">{field.type}</td>
-                            <td>
-                              <input
-                                type="text"
-                                className="input input-bordered input-sm w-full"
-                                value={
-                                  settings.collections[selectedCollection]
-                                    ?.fields[field.id]?.displayName || ""
-                                }
-                                onChange={(e) =>
-                                  handleFieldDisplayNameChange(
-                                    field.id,
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="Custom display name"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="text"
-                                className="input input-bordered input-sm w-full"
-                                value={
-                                  settings.collections[selectedCollection]
-                                    ?.fields[field.id]?.description || ""
-                                }
-                                onChange={(e) =>
-                                  handleFieldDescriptionChange(
-                                    field.id,
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="Field description"
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="checkbox"
-                                className="toggle toggle-primary"
-                                checked={
-                                  settings.collections[selectedCollection]
-                                    ?.fields[field.id]?.include || false
-                                }
-                                onChange={() => handleFieldToggle(field.id)}
-                              />
-                            </td>
+              (() => {
+                const collection = collections.find(
+                  (c) => c.id === selectedCollection
+                );
+                if (!collection) {
+                  return (
+                    <div className="alert alert-error mb-4">
+                      <label>Collection not found.</label>
+                    </div>
+                  );
+                }
+                // Filter fields in the modal based on the search term
+                const filteredFields = collection.fields.filter(
+                  (field) =>
+                    field.displayName
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase()) ||
+                    field.name
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase()) ||
+                    field.type.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                return (
+                  <>
+                    <div className="form-control w-full mb-4">
+                      <input
+                        type="text"
+                        placeholder="Search fields..."
+                        className="input input-bordered w-full"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                    <div className="overflow-y-auto max-h-[60vh]">
+                      <table className="table w-full">
+                        <thead>
+                          <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Custom Display Name</th>
+                            <th>Description</th>
+                            <th>Visible</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </>
+                        </thead>
+                        <tbody>
+                          {filteredFields.map((field) => (
+                            <tr key={field.id}>
+                              <td className="whitespace-nowrap">
+                                {field.displayName || field.name}
+                              </td>
+                              <td className="whitespace-nowrap">
+                                {field.type}
+                              </td>
+                              <td>
+                                <input
+                                  type="text"
+                                  className="input input-bordered input-sm w-full"
+                                  value={
+                                    settings.collections[selectedCollection]
+                                      ?.fields[field.id]?.displayName || ""
+                                  }
+                                  onChange={(e) =>
+                                    handleFieldDisplayNameChange(
+                                      field.id,
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Custom display name"
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  type="text"
+                                  className="input input-bordered input-sm w-full"
+                                  value={
+                                    settings.collections[selectedCollection]
+                                      ?.fields[field.id]?.description || ""
+                                  }
+                                  onChange={(e) =>
+                                    handleFieldDescriptionChange(
+                                      field.id,
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Field description"
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  className="toggle toggle-primary"
+                                  checked={
+                                    settings.collections[selectedCollection]
+                                      ?.fields[field.id]?.include || false
+                                  }
+                                  onChange={() => handleFieldToggle(field.id)}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                );
+              })()
             )}
 
             <div className="modal-action">
