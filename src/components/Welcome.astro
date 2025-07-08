@@ -121,67 +121,51 @@ const basePath = import.meta.env.BASE_URL;
 		try {
 			button.disabled = true;
 			button.textContent = 'Regenerating...';
-			
-			// Always use startProgress helper
 			startProgress();
-			
-			// Start with initial step
 			currentStepIndex = 0;
 			updateProgress();
 
-			// Make the request
+			// Trigger regeneration
 			const response = await fetch(`${import.meta.env.BASE_URL}/api/regenerate-llms`, {
 				method: 'POST',
-				headers: {
-					'Accept': 'text/event-stream',
-				}
+				headers: { 'Content-Type': 'application/json' }
 			});
-
 			if (!response.ok) {
-				const data = await response.json() as { error?: string };
-				throw new Error(data.error || 'Failed to regenerate llms.txt');
+				const data = await response.json();
+				throw new Error(data.error || 'Failed to trigger regeneration');
 			}
 
-			// Set up event source reader
-			const reader = response.body?.getReader();
-			const decoder = new TextDecoder();
-			let buffer = '';
-
-			if (!reader) throw new Error('Stream not available');
-
-			while (true) {
-				const { done, value } = await reader.read();
-				
-				if (done) {
-					// Process any remaining data in buffer
-					processEvents(buffer);
-					break;
+			// Listen for progress via SSE
+			const es = new window.EventSource(`${import.meta.env.BASE_URL}/api/admin/progress`);
+			es.onmessage = (event) => {
+				processEvents(event.data);
+				if (event.data.includes('done')) {
+					es.close();
+					stopProgress(true);
+					button.textContent = 'Success!';
+					window.toast.show('Successfully regenerated llms.txt content', 'success');
+					setTimeout(() => {
+						button.textContent = 'Regenerate llms.txt';
+						button.disabled = false;
+					}, 2000);
 				}
-
-				// Decode the chunk and add to buffer
-				buffer += decoder.decode(value, { stream: true });
-				
-				// Process complete events in buffer
-				const events = buffer.split('\n\n');
-				buffer = events.pop() || ''; // Keep incomplete event in buffer
-				
-				for (const event of events) {
-					if (event.trim()) {
-						processEvents(event);
-					}
+				if (event.data.startsWith('error:')) {
+					es.close();
+					stopProgress(false);
+					button.textContent = 'Error - Try Again';
+					button.disabled = false;
+					window.toast.show(event.data, 'error');
 				}
-			}
-
-			stopProgress(true);
-			button.textContent = 'Success!';
-			window.toast.show('Successfully regenerated llms.txt content', 'success');
-			
-			setTimeout(() => {
-				button.textContent = 'Regenerate llms.txt';
+			};
+			es.onerror = (e) => {
+				es.close();
+				stopProgress(false);
+				button.textContent = 'Error - Try Again';
 				button.disabled = false;
-			}, 2000);
+				window.toast.show('Failed to receive progress updates', 'error');
+			};
 		} catch (error) {
-			console.error('Error regenerating llms.txt:', error);
+			console.error('Error triggering regeneration:', error);
 			stopProgress(false);
 			button.textContent = 'Error - Try Again';
 			button.disabled = false;
@@ -190,22 +174,17 @@ const basePath = import.meta.env.BASE_URL;
 	}
 
 	function processEvents(eventText: string) {
-		const lines = eventText.split('\n');
-		for (const line of lines) {
-			if (line.startsWith('data: ')) {
-				try {
-					const data = JSON.parse(line.slice(5));
-					if (data.step) {
-						const stepIndex = STEPS.findIndex(s => s.message === data.step);
-						if (stepIndex !== -1) {
-							currentStepIndex = stepIndex;
-							updateProgress();
-						}
-					}
-				} catch (e) {
-					console.error('Error parsing event data:', e);
+		try {
+			const data = JSON.parse(eventText) as { message?: string };
+			if (data.message) {
+				const stepIndex = STEPS.findIndex(s => s.message === data.message);
+				if (stepIndex !== -1) {
+					currentStepIndex = stepIndex;
+					updateProgress();
 				}
 			}
+		} catch (e) {
+			console.error('Error parsing event data:', e);
 		}
 	}
 
