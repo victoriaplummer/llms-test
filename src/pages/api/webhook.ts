@@ -3,7 +3,7 @@ export const config = {
 };
 
 import type { APIRoute } from "astro";
-import { POST as regenerateLlms } from "./admin/regenerate-llms";
+import { POST as regenerateLlms } from "./regenerate-llms";
 
 interface PagesResponse {
   pagesProcessed: number;
