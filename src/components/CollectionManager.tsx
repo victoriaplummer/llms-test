@@ -86,6 +86,10 @@ export default function CollectionManager({
     return initializedSettings;
   });
 
+  // State for all collection schemas
+  const [schemas, setSchemas] = useState<
+    Record<string, WebflowCollectionSchema>
+  >({});
   // State for the currently selected collection (for modal)
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
     null
@@ -112,71 +116,34 @@ export default function CollectionManager({
     console.log("Component mounted or collections changed:", collections);
   }, [collections]);
 
-  // Fetch the schema for the selected collection when it changes
+  // Fetch all schemas on mount or when collections change
   useEffect(() => {
-    async function loadCollectionSchema() {
-      if (!selectedCollection) return;
-
+    async function loadAllSchemas() {
       setIsLoading(true);
       setError(null);
-
+      const newSchemas: Record<string, WebflowCollectionSchema> = {};
       try {
-        console.log("Fetching schema for collection:", selectedCollection);
-        // Fetch schema from API route
-        const response = await fetch(
-          `/api/admin/get-collection-schema?id=${selectedCollection}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch schema");
-        }
-        const schema = (await response.json()) as WebflowCollectionSchema;
-        setCollectionSchema(schema);
-        console.log("Loaded schema:", schema);
-
-        // Initialize settings for this collection if fields are not set
-        setSettings((prev) => {
-          const collectionSettings = prev.collections[selectedCollection];
-          if (
-            !collectionSettings?.fields ||
-            Object.keys(collectionSettings.fields).length === 0
-          ) {
-            console.log(
-              "Initializing settings for collection:",
-              selectedCollection
+        for (const collection of collections) {
+          const response = await fetch(
+            `/api/admin/get-collection-schema?id=${collection._id}`
+          );
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch schema for collection ${collection._id}`
             );
-            return {
-              collections: {
-                ...prev.collections,
-                [selectedCollection]: {
-                  ...collectionSettings,
-                  id: selectedCollection,
-                  displayName: schema.name,
-                  fields: Object.fromEntries(
-                    schema.fields.map((field: WebflowCollectionField) => [
-                      field._id,
-                      {
-                        include: false,
-                        displayName: field.displayName,
-                        description: "",
-                      },
-                    ])
-                  ),
-                },
-              },
-            };
           }
-          return prev;
-        });
-      } catch (err) {
-        console.error("Error loading collection schema:", err);
-        setError("Failed to load collection fields. Please try again.");
+          const schema = (await response.json()) as WebflowCollectionSchema;
+          newSchemas[collection._id] = schema;
+        }
+        setSchemas(newSchemas);
+      } catch (e) {
+        setError("Failed to load collection schemas. Please try again.");
       } finally {
         setIsLoading(false);
       }
     }
-
-    loadCollectionSchema();
-  }, [selectedCollection]);
+    loadAllSchemas();
+  }, [collections]);
 
   // Register a custom event for external save triggers (e.g., from Astro page)
   useEffect(() => {
@@ -240,6 +207,7 @@ export default function CollectionManager({
     });
 
     setSelectedCollection(collectionId);
+    setCollectionSchema(schemas[collectionId] || null);
     setIsModalOpen(true);
     setSearchTerm("");
     setError(null);
