@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { WebflowPage } from "../utils/webflow-types";
+import type { WebflowPage } from "../types";
 
 interface PageConfig {
   isVisible: boolean;
@@ -18,23 +18,20 @@ export default function PageManager({
   initialSettings,
 }: PageManagerProps) {
   const [settings, setSettings] = useState<Record<string, PageConfig>>(() => {
-    // If we have initial settings, use those
-    if (initialSettings) {
-      return initialSettings;
+    // Merge all pages with any existing settings
+    const merged: Record<string, PageConfig> = {};
+    for (const page of pages) {
+      merged[page.id] =
+        initialSettings && initialSettings[page.id]
+          ? initialSettings[page.id]
+          : {
+              isVisible: true,
+              displayName: page.title,
+              description: "",
+              isOptional: false,
+            };
     }
-
-    // Otherwise create default settings for each page
-    return Object.fromEntries(
-      pages.map((page) => [
-        page.id,
-        {
-          isVisible: true, // Default to visible since most pages should be exposed
-          displayName: page.title,
-          description: "",
-          isOptional: false,
-        },
-      ])
-    );
+    return merged;
   });
 
   const [isSaving, setIsSaving] = useState(false);
