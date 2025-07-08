@@ -19,4 +19,7 @@ export class MockKVNamespace implements MinimalKV {
       cacheStatus: null,
     };
   }
+  async clear() {
+    this.store.clear();
+  }
 }

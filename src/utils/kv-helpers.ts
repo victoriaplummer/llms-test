@@ -116,3 +116,19 @@ export async function updateLLMSSection(
 
   await kv.put(llmsKey, cleanedLines.join("\n"));
 }
+
+/**
+ * Utility to clear all keys from a MinimalKV instance (mock or real)
+ */
+export async function clearAllKV(kv: MinimalKV): Promise<void> {
+  if (typeof (kv as any).clear === "function") {
+    // Use the fast clear if available (MockKVNamespace)
+    await (kv as any).clear();
+    return;
+  }
+  // Otherwise, list and delete all keys (for real KV)
+  const listResult = await kv.list();
+  for (const { name } of listResult.keys) {
+    await kv.delete(name);
+  }
+}

@@ -119,7 +119,7 @@ export function filterExposedFields(
 
   const exposedFields = new Map<string, WebflowCollectionField>();
   for (const [fieldSlug, field] of fieldMap.entries()) {
-    const fieldConfig = config.fields[field._id];
+    const fieldConfig = config.fields[field.id];
     if (fieldConfig?.include) {
       // Create a copy of the field with potentially overridden display name
       const exposedField = {

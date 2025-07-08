@@ -53,7 +53,7 @@ export const fetchCollectionSchema = async (
     }
 
     const schema: WebflowCollectionSchema = {
-      _id: apiResponse.id,
+      id: apiResponse.id,
       lastUpdated: apiResponse.lastUpdated.toISOString(),
       createdOn: apiResponse.createdOn.toISOString(),
       name: apiResponse.displayName || apiResponse.id,
@@ -67,7 +67,7 @@ export const fetchCollectionSchema = async (
           field.validations.maxCount !== 1;
 
         return {
-          _id: field.id,
+          id: field.id,
           name: field.slug,
           displayName: field.displayName,
           type: isMultiRef ? "MultiReference" : field.type,
@@ -131,7 +131,7 @@ export const fetchCollections = async (
         console.log("\nItem count:", itemCount);
 
         return {
-          _id: collection.id,
+          id: collection.id,
           name: collection.displayName || collection.id,
           displayName: collection.displayName || collection.id,
           itemCount,

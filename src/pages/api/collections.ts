@@ -241,7 +241,7 @@ export const GET: APIRoute = async ({ locals }) => {
 
     // Filter to only exposed collections
     const exposedCollections = collections.filter((c) =>
-      isCollectionExposed(c._id)
+      isCollectionExposed(c.id)
     );
     console.log(
       `${exposedCollections.length} collections are configured for exposure`
@@ -277,17 +277,17 @@ export const GET: APIRoute = async ({ locals }) => {
         // No progressCallback on locals, skip
 
         // Get collection config
-        const config = getCollectionConfig(collection._id);
+        const config = getCollectionConfig(collection.id);
         if (!config) {
           console.log(
-            `No config found for collection ${collection._id}, skipping`
+            `No config found for collection ${collection.id}, skipping`
           );
           continue;
         }
 
         // Skip if collection is not visible
         if (!config.isVisible) {
-          console.log(`Collection ${collection._id} is not visible, skipping`);
+          console.log(`Collection ${collection.id} is not visible, skipping`);
           continue;
         }
 
@@ -295,10 +295,10 @@ export const GET: APIRoute = async ({ locals }) => {
         const collectionUrl = formatCollectionUrl(collection.name);
 
         // Fetch collection schema
-        console.log(`Fetching schema for collection ${collection._id}`);
+        console.log(`Fetching schema for collection ${collection.id}`);
         const schema = await fetchCollectionSchema(
           webflowClient,
-          collection._id
+          collection.id
         );
         console.log("Got schema:", schema.name);
 
@@ -306,21 +306,21 @@ export const GET: APIRoute = async ({ locals }) => {
         const fieldMap = new Map<string, WebflowCollectionField>(
           schema.fields.map((f: WebflowCollectionField) => [f.name, f])
         );
-        const exposedFieldMap = filterExposedFields(collection._id, fieldMap);
+        const exposedFieldMap = filterExposedFields(collection.id, fieldMap);
 
         // Skip if no fields are exposed
         if (!exposedFieldMap.size) {
           console.log(
-            `No exposed fields in collection ${collection._id}, skipping`
+            `No exposed fields in collection ${collection.id}, skipping`
           );
           continue;
         }
 
         // Fetch items
-        console.log(`Fetching items for collection ${collection._id}`);
+        console.log(`Fetching items for collection ${collection.id}`);
         const items = await fetchAllCollectionItems(
           webflowClient,
-          collection._id
+          collection.id
         );
         console.log(`Found ${items.length} items`);
 
@@ -367,7 +367,7 @@ export const GET: APIRoute = async ({ locals }) => {
               if (item.fieldData) {
                 // Filter to only exposed fields
                 const exposedData = filterExposedItemData(
-                  collection._id,
+                  collection.id,
                   item.fieldData
                 );
 
@@ -486,7 +486,7 @@ export const GET: APIRoute = async ({ locals }) => {
         await webflowContent.put(`${baseKey}.md`, markdownContent);
       } catch (collectionError) {
         console.error(
-          `Error processing collection ${collection._id}:`,
+          `Error processing collection ${collection.id}:`,
           collectionError instanceof Error
             ? collectionError.message
             : String(collectionError)

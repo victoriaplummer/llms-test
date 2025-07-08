@@ -1,5 +1,5 @@
 /**
- * @fileoverview CollectionManager component handles the management of Webflow collections
+ * CollectionManager component handles the management of Webflow collections
  * and their field exposure settings. It provides a UI for controlling which collections
  * and fields are visible to the public API.
  */
@@ -72,14 +72,14 @@ export default function CollectionManager({
 
     // Ensure each collection has a fields object
     collections.forEach((collection) => {
-      if (!initializedSettings.collections[collection._id]) {
-        initializedSettings.collections[collection._id] = {
-          id: collection._id,
+      if (!initializedSettings.collections[collection.id]) {
+        initializedSettings.collections[collection.id] = {
+          id: collection.id,
           isVisible: false,
           fields: {},
         };
-      } else if (!initializedSettings.collections[collection._id].fields) {
-        initializedSettings.collections[collection._id].fields = {};
+      } else if (!initializedSettings.collections[collection.id].fields) {
+        initializedSettings.collections[collection.id].fields = {};
       }
     });
 
@@ -90,26 +90,21 @@ export default function CollectionManager({
   const [schemas, setSchemas] = useState<
     Record<string, WebflowCollectionSchema>
   >({});
+
   // State for the currently selected collection (for modal)
   const [selectedCollection, setSelectedCollection] = useState<string | null>(
     null
   );
+
   // State for the schema of the selected collection
   const [collectionSchema, setCollectionSchema] =
     useState<WebflowCollectionSchema | null>(null);
-  // Modal open/close state
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // Search term for filtering fields in modal
   const [searchTerm, setSearchTerm] = useState("");
-  // Saving state for async save actions
   const [isSaving, setIsSaving] = useState(false);
-  // Loading state for async schema fetch
   const [isLoading, setIsLoading] = useState(false);
-  // Error state for displaying errors to the user
   const [error, setError] = useState<string | null>(null);
-  // State for tracking regeneration (not used in this snippet)
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [regenerateError, setRegenerateError] = useState<string | null>(null);
 
   // Log when component mounts or collections prop changes
   useEffect(() => {
@@ -125,15 +120,15 @@ export default function CollectionManager({
       try {
         for (const collection of collections) {
           const response = await fetch(
-            `/api/admin/get-collection-schema?id=${collection._id}`
+            `/api/admin/get-collection-schema?id=${collection.id}`
           );
           if (!response.ok) {
             throw new Error(
-              `Failed to fetch schema for collection ${collection._id}`
+              `Failed to fetch schema for collection ${collection.id}`
             );
           }
           const schema = (await response.json()) as WebflowCollectionSchema;
-          newSchemas[collection._id] = schema;
+          newSchemas[collection.id] = schema;
         }
         setSchemas(newSchemas);
       } catch (e) {
@@ -363,8 +358,8 @@ export default function CollectionManager({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {collections.map((collection) => {
-          const collectionSettings = settings.collections[collection._id] || {
-            id: collection._id,
+          const collectionSettings = settings.collections[collection.id] || {
+            id: collection.id,
             isVisible: false,
             fields: {},
           };
@@ -375,7 +370,7 @@ export default function CollectionManager({
 
           return (
             <div
-              key={collection._id}
+              key={collection.id}
               className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow"
             >
               <div className="card-body">
@@ -389,7 +384,7 @@ export default function CollectionManager({
                     checked={collectionSettings.isVisible || false}
                     onChange={(e) => {
                       e.stopPropagation();
-                      handleCollectionVisibilityToggle(collection._id);
+                      handleCollectionVisibilityToggle(collection.id);
                     }}
                   />
                 </div>
@@ -402,7 +397,7 @@ export default function CollectionManager({
                 <div className="card-actions justify-end mt-4">
                   <button
                     className="btn btn-primary btn-sm"
-                    onClick={() => handleCollectionClick(collection._id)}
+                    onClick={() => handleCollectionClick(collection.id)}
                   >
                     Configure Fields
                   </button>
@@ -417,7 +412,7 @@ export default function CollectionManager({
         <div className="modal modal-open">
           <div className="modal-box w-11/12 max-w-5xl">
             <h3 className="font-bold text-lg mb-4">
-              {collections.find((c) => c._id === selectedCollection)
+              {collections.find((c) => c.id === selectedCollection)
                 ?.displayName || "Collection Fields"}
             </h3>
 
@@ -472,7 +467,7 @@ export default function CollectionManager({
                       </thead>
                       <tbody>
                         {filteredFields?.map((field) => (
-                          <tr key={field._id}>
+                          <tr key={field.id}>
                             <td className="whitespace-nowrap">
                               {field.displayName || field.name}
                             </td>
@@ -483,11 +478,11 @@ export default function CollectionManager({
                                 className="input input-bordered input-sm w-full"
                                 value={
                                   settings.collections[selectedCollection]
-                                    ?.fields[field._id]?.displayName || ""
+                                    ?.fields[field.id]?.displayName || ""
                                 }
                                 onChange={(e) =>
                                   handleFieldDisplayNameChange(
-                                    field._id,
+                                    field.id,
                                     e.target.value
                                   )
                                 }
@@ -500,11 +495,11 @@ export default function CollectionManager({
                                 className="input input-bordered input-sm w-full"
                                 value={
                                   settings.collections[selectedCollection]
-                                    ?.fields[field._id]?.description || ""
+                                    ?.fields[field.id]?.description || ""
                                 }
                                 onChange={(e) =>
                                   handleFieldDescriptionChange(
-                                    field._id,
+                                    field.id,
                                     e.target.value
                                   )
                                 }
@@ -517,9 +512,9 @@ export default function CollectionManager({
                                 className="toggle toggle-primary"
                                 checked={
                                   settings.collections[selectedCollection]
-                                    ?.fields[field._id]?.include || false
+                                    ?.fields[field.id]?.include || false
                                 }
-                                onChange={() => handleFieldToggle(field._id)}
+                                onChange={() => handleFieldToggle(field.id)}
                               />
                             </td>
                           </tr>

@@ -116,7 +116,7 @@ export interface WebflowPageContentResponse {
 }
 
 export interface WebflowCollection {
-  _id: string;
+  id: string;
   name: string;
   displayName: string;
   itemCount: number;
@@ -145,7 +145,7 @@ export interface WebflowCollectionItemsResponse {
 }
 
 export interface WebflowCollectionField {
-  _id: string;
+  id: string;
   name: string;
   displayName: string;
   type: string;
@@ -155,7 +155,7 @@ export interface WebflowCollectionField {
 }
 
 export interface WebflowCollectionSchema {
-  _id: string;
+  id: string;
   lastUpdated: string;
   createdOn: string;
   name: string;

@@ -1,6 +1,6 @@
 // Astro middleware to attach KV namespaces to context.locals (Cloudflare in prod, in-memory mock in dev)
 import type { MiddlewareHandler } from "astro";
-import { defineMiddleware } from "astro:middleware";
+import { defineMiddleware } from "astro/middleware";
 import { MockKVNamespace } from "./utils/mock-kv";
 
 // Create shared instances at the module level for dev
