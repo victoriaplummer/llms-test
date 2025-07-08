@@ -71,6 +71,7 @@ export const OPTIONS: APIRoute = async () => {
 };
 
 export const POST: APIRoute = async ({ locals, request }) => {
+  console.log("regenerate-llms handler called");
   try {
     // Load exposure settings first
     await loadExposureSettings((locals as any).exposureSettings);
