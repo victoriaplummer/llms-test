@@ -59,6 +59,17 @@ const createInitialContent = async (locals: App.Locals) => {
   ].join("\n");
 };
 
+export const OPTIONS: APIRoute = async () => {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Accept",
+    },
+  });
+};
+
 export const POST: APIRoute = async ({ locals, request }) => {
   try {
     // Load exposure settings first
@@ -149,6 +160,9 @@ export const POST: APIRoute = async ({ locals, request }) => {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
+        "Access-Control-Allow-Origin": "*", // Or restrict to your frontend's origin
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Accept",
       },
     });
   } catch (error) {
@@ -162,6 +176,9 @@ export const POST: APIRoute = async ({ locals, request }) => {
         status: 500,
         headers: {
           "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*", // Or restrict to your frontend's origin
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Accept",
         },
       }
     );
