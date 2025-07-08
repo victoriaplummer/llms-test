@@ -115,13 +115,16 @@ export default function CollectionManager({
           setError(null);
 
           try {
-            const response = await fetch("/api/admin/save-exposure-settings", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(settings),
-            });
+            const response = await fetch(
+              `${import.meta.env.BASE_URL}/api/admin/save-exposure-settings`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(settings),
+              }
+            );
 
             if (!response.ok) {
               throw new Error("Failed to save settings");
@@ -266,13 +269,16 @@ export default function CollectionManager({
       setIsSaving(true);
       setError(null);
 
-      const response = await fetch("/api/admin/save-exposure-settings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(settings),
-      });
+      const response = await fetch(
+        `${import.meta.env.BASE_URL}/api/admin/save-exposure-settings`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(settings),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to save settings");
