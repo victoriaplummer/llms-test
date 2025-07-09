@@ -19,17 +19,6 @@ export default defineConfig({
     platformProxy: {
       enabled: true,
     },
-    runtime: {
-      bindings: {
-        // This name must match the KV namespace name in wrangler.toml
-        WEBFLOW_CONTENT: {
-          type: "kv",
-        },
-        EXPOSURE_SETTINGS: {
-          type: "kv",
-        },
-      },
-    },
   }),
 
   integrations: [react(), tailwind()],
