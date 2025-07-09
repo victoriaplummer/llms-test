@@ -34,6 +34,7 @@
     "@cloudflare/workers-types": "^4.20250628.0",
     "@tailwindcss/typography": "^0.5.16",
     "@types/turndown": "^5.0.5",
+    "@webflow/webflow-cli": "^1.8.13",
     "autoprefixer": "^10.4.21",
     "daisyui": "^5.0.0-beta.9",
     "postcss": "^8.5.6",
