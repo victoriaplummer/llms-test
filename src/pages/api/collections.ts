@@ -218,6 +218,7 @@ function formatCollectionUrl(name: string): string {
 }
 
 export const GET: APIRoute = async ({ locals }) => {
+  const domain = import.meta.env.DOMAIN;
   const basePath = import.meta.env.BASE_URL;
   const siteId = (locals as any).runtime.env.WEBFLOW_SITE_ID;
   const accessToken = (locals as any).runtime.env.WEBFLOW_SITE_API_TOKEN;
@@ -328,7 +329,7 @@ export const GET: APIRoute = async ({ locals }) => {
         collectionsContent.push(
           `- [${
             config.displayName || collection.displayName
-          }](${basePath}/collections/${collectionUrl}.md): ${
+          }](https://${domain}/${basePath}/collections/${collectionUrl}.md): ${
             config.description || `Collection with ${items.length} items`
           }`
         );
