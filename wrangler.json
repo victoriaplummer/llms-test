@@ -16,7 +16,7 @@
       "binding": "DB",
       "database_name": "webflow-llms",
       "database_id": "00000000-0000-0000-0000-000000000000",
-      "migrations_dir": "./d1/migrations"
+      "migrations_dir": "drizzle"
     }
   ],
   "kv_namespaces": [
